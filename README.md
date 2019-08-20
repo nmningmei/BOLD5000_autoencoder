@@ -72,3 +72,7 @@ os.system(cmdline)
 ![reg](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/registrate%20funtional%20scans%20to%20sctural%20scans.png)
 ##
 ![hpf](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/highpass_temp.png)
+
+## reshape the volumes into 88 x 88 x 66 with larger voxel size.
+
+## get related volumes
