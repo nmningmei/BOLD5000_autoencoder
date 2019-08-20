@@ -10,7 +10,7 @@ import os
 import zipfile
 from glob import glob
 
-working_dir = '../../../../BOLD5000/data/raw'
+working_dir = '../../../../BOLD5000/data/raw' # where the loaded data locate
 saving_dir = '../../../../BOLD5000/data/unzipped'
 if not os.path.exists(saving_dir):
     os.mkdir(saving_dir)

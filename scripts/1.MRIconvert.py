@@ -23,7 +23,7 @@ if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 
 
-working_dir = '../../../../BOLD5000/data/unzipped'
+working_dir = '../../../../BOLD5000/data/unzipped'# data in .dcm format
 working_data = [item for item in glob(os.path.join(working_dir,'*','*'))]
 print(np.sort(working_data),'\n')
 
