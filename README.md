@@ -141,6 +141,7 @@ resampled.to_filename(picked_data.replace('filtered.nii.gz',
 ## step 2.2.Variational Autoencoder - variantional inference, reconstruction
 
 <img align="center" width="100" height="100" src="https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/vae_model.png">
+
 ![vae](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%202.jpg)
 ## step 2.3.generalization to a different experiment - cross experiment generalization (test data is available upon requiest)
 ![generalize](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%203.jpg)
