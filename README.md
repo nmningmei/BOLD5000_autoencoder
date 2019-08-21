@@ -13,6 +13,7 @@ autoencoder trained on BOLD5000 dataset
 - pandas 0.20.3
 - nipype 1.1.9
 - nibabel 2.4.1
+- nilearn 0.5.0
 - scikit-learning 0.20.3
 - pytorch-cpu 1.2
 
