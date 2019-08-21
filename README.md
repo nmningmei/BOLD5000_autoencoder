@@ -132,5 +132,8 @@ resampled = resample_img(resample3d.inputs.out_file,
 resampled.to_filename(picked_data.replace('filtered.nii.gz',
                                           'filtered_reshaped.nii.gz'))
 ```
-## step 1.5.get related volumes
+## step 1.5.get relevant volumes
 ![fmri-protocol](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/fMRI%20protocol.jpg)
+
+# Step 2.Simple Autoencoder - compression, reconstruction
+![simple-autoencoder](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%201.jpg)
