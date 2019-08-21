@@ -36,8 +36,8 @@ print(converter.cmdline)
 converter.run()
 ```
 
-# preprocessing pipeline
-## motion correction, susan smoothing etc
+# Step 1.Preprocessing Pipeline - functional scans
+## [motion correction, susan smoothing etc](https://nbviewer.jupyter.org/github/nmningmei/preprocessing_pipelines/blob/master/FSL_vs_nipype_fsl_preprocessing.ipynb).
 ![prefmri](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/preprocessing_step_1.png)
 ## ICA AROMA denoising
 ```
@@ -46,7 +46,7 @@ sub_name = np.unique(re.findall(r'CSI\d',picked_data))[0]
 # get the session and run
 n_session = np.unique(re.findall(r'Sess-\d+',picked_data))[0]
 n_run = np.unique(re.findall(r'Run-\d+',picked_data))[0]
-# get the file of the first run of the first session
+# get the file of the first run of the first session. Why? Because ICA AROMA takes strutural preprocessed files and structural scans are only processed when the first run of the first session is processed. 
 run1 = 'Run-1_'
 session1 = 'Sess-1_'
 first_run = os.path.abspath([item for item in glob(os.path.join(data_dir,
