@@ -135,5 +135,8 @@ resampled.to_filename(picked_data.replace('filtered.nii.gz',
 ## step 1.5.get relevant volumes
 ![fmri-protocol](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/fMRI%20protocol.jpg)
 
-# Step 2.Simple Autoencoder - compression, reconstruction
+# Autoencoder Modeling
+## Step 2.1.Simple Autoencoder - compression, reconstruction
 ![simple-autoencoder](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%201.jpg)
+## Step 2.2.Variational Autoencoder - variantional inference, reconstruction
+![vae](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%202.jpg)
