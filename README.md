@@ -133,3 +133,4 @@ resampled.to_filename(picked_data.replace('filtered.nii.gz',
                                           'filtered_reshaped.nii.gz'))
 ```
 ## step 1.5.get related volumes
+![fmri-protocol](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/fMRI%20protocol.jpg)
