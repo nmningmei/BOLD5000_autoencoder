@@ -140,5 +140,7 @@ resampled.to_filename(picked_data.replace('filtered.nii.gz',
 ![simple-autoencoder](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%201.jpg)
 ## step 2.2.Variational Autoencoder - variantional inference, reconstruction
 ![vae](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%202.jpg)
-## step 2.2.generalization to a different experiment - cross experiment generalization (test data is available upon requiest)
+## step 2.3.generalization to a different experiment - cross experiment generalization (test data is available upon requiest)
 ![generalize](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%203.jpg)
+## step 2.4.train a convolutional neural network, outputs the same latent representation - approximation of an image-to-BOLD mapper (aka, the brain)
+![mapper](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%204.jpg)
