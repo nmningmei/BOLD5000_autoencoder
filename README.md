@@ -18,12 +18,12 @@ autoencoder trained on BOLD5000 dataset
 - pytorch-cpu 1.2
 
 # Check List:
-[x] download and preprocess the BOLD5000 dataset
-[ ] get relevant volumes from the preprocessed data
-[ ] train a simple autoencoder with the data
-[ ] train a variational autoencoder with the data
-[ ] train a convolutional neural network using the pretrained simple autoencoder with the BOLD data and images
-[ ] examine the generalizability of the simple/variational autoencoder to a new fMRI dataset, using the autoencoder as a "feature extractor"
+- [x] download and preprocess the BOLD5000 dataset
+- [ ] get relevant volumes from the preprocessed data
+- [ ] train a simple autoencoder with the data
+- [ ] train a variational autoencoder with the data
+- [ ] train a convolutional neural network using the pretrained simple autoencoder with the BOLD data and images
+- [ ] examine the generalizability of the simple/variational autoencoder to a new fMRI dataset, using the autoencoder as a "feature extractor"
 
 # Step 0 [Download Data: BOLD500](https://bold5000.github.io)
 
