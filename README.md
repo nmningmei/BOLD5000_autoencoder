@@ -90,5 +90,33 @@ os.system(cmdline)
 ![hpf](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/highpass_temp.png)
 
 ## reshape the volumes into 88 x 88 x 66 with larger voxel size.
+```
+from nipype.interfaces import afni
+from nilearn.image import resample_img
+from nibabel import load as load_fmri
 
+target_func = load_fmri(
+                os.path.abspath(
+                    os.path.join(
+                      data_dir,
+                      'target_func.nii.gz')
+                      )
+                      )
+# afni 3dresample -dxyz 2.386364,2.386364,2.4 -prefix output.nii.gz -input input.nii.gz
+# resample the voxel sizes
+resample3d = afni.utils.Resample(voxel_size = (2.386364,2.386364,2.4))
+resample3d.inputs.in_file = picked_data
+resample3d.inputs.outputtype = 'NIFTI_GZ'
+resample3d.inputs.out_file = picked_data.replace('filtered.nii.gz',
+                                                 'filtered_resample.nii.gz')
+print(resample3d.cmdline)
+resample3d.run()
+
+# reshape into 88 by 88 by 66
+resampled = resample_img(resample3d.inputs.out_file,
+                         target_affine = target_func.affine,
+                         target_shape = (88,88,66))
+resampled.to_filename(picked_data.replace('filtered.nii.gz',
+                                          'filtered_reshaped.nii.gz'))
+```
 ## get related volumes
