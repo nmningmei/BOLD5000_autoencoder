@@ -8,24 +8,25 @@ Created on Fri Aug  2 13:31:21 2019
 
 import re
 import os
-from glob import glob
-from shutil import copyfile,rmtree
-from nipype.interfaces.fsl import ICA_AROMA
-from nipype.interfaces import freesurfer,fsl
 import pandas as pd
-import numpy as np
-from utils import (create_fsl_FEAT_workflow_func,
-                   create_registration_workflow,
-                   create_highpass_filter_workflow,
-                   create_simple_struc2BOLD)
-from time import sleep
+import numpy  as np
+from glob                   import glob
+from shutil                 import copyfile,rmtree
+from nipype.interfaces.fsl  import ICA_AROMA
+from nipype.interfaces      import freesurfer,fsl
+from utils                  import (create_fsl_FEAT_workflow_func,
+                                    create_registration_workflow,
+                                    )
+from time                   import sleep
 
 data_dir = '../data/converted'
 raw_data = [item for item in glob(os.path.join(data_dir,
                              '*',
                              '*',
                              '*BOLD*.nii.gz')) if \
-                ('PA' not in item) and ('AP' not in item) and ('Local' not in item)]
+                ('PA' not in item) and\
+                ('AP' not in item) and\
+                ('Local' not in item)]
 
 for idx in range(len(raw_data)):
     picked_data = os.path.abspath(raw_data[idx])
@@ -35,16 +36,16 @@ for idx in range(len(raw_data)):
             'outputs',
             'func',
             'prefiltered_func.nii.gz')):
-        nipype_workflow_name = 'nipype_workflow'
-        n_session = re.findall('Sess-1_',picked_data)
-        n_run = re.findall('Run-1_',picked_data)
-        is_first = np.logical_and(len(n_run) > 0,len(n_session) > 0)
+        nipype_workflow_name    = 'nipype_workflow'
+        n_session               = re.findall('Sess-1_',picked_data)
+        n_run                   = re.findall('Run-1_',picked_data)
+        is_first                = np.logical_and(len(n_run) > 0,len(n_session) > 0)
 
         if not is_first:
-            sub_name = np.unique(re.findall(r'CSI\d',picked_data))[0]
-            session1 = 'Sess-1_'
-            run1 = 'Run-1_'
-            first_run = os.path.abspath([item for item in glob(os.path.join(data_dir,
+            sub_name    = np.unique(re.findall(r'CSI\d',picked_data))[0]
+            session1    = 'Sess-1_'
+            run1        = 'Run-1_'
+            first_run   = os.path.abspath([item for item in glob(os.path.join(data_dir,
                                           "*",
                                           "*",
                                           "*.nii.gz")) if \
@@ -69,7 +70,7 @@ for idx in range(len(raw_data)):
         # make a figure of the workflow
         preproc.write_graph()
         # run the workflow
-        res             = preproc.run()
+        res = preproc.run()
 
         # moving MCflirt results to MC folder in output directory
         copyfile(glob(os.path.join(preproc.base_dir,
