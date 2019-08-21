@@ -99,10 +99,10 @@ os.system(cmdline)
 ```
 ## step 1.3.register functional scans to structural scans
 ![reg](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/registrate%20funtional%20scans%20to%20sctural%20scans.png)
-##
+## step 1.4.high pass filter at 60 Hz
 ![hpf](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/highpass_temp.png)
 
-## step 1.3.reshape the volumes into 88 x 88 x 66 with larger voxel size.
+## step 1.4.reshape the volumes into 88 x 88 x 66 with larger voxel size.
 ```
 from nipype.interfaces import afni
 from nilearn.image import resample_img
@@ -132,4 +132,4 @@ resampled = resample_img(resample3d.inputs.out_file,
 resampled.to_filename(picked_data.replace('filtered.nii.gz',
                                           'filtered_reshaped.nii.gz'))
 ```
-## step 1.4.get related volumes
+## step 1.5.get related volumes
