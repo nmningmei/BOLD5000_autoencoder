@@ -17,11 +17,24 @@ autoencoder trained on BOLD5000 dataset
 - scikit-learning 0.20.3
 - pytorch-cpu 1.2
 
-# [Data: BOLD500](https://bold5000.github.io)
+# Step 0 [Download Data: BOLD500](https://bold5000.github.io)
 
 link to download the data: https://figshare.com/articles/BOLD5000/6459449
 
 Please note: only "Unfiltered" data were used.
+## step 0.1.unzip
+## step 0.2.convet dcm to nii.gz
+```
+from nipype.interfaces.dcm2nii import Dcm2niix
+converter = Dcm2niix()
+converter.inputs.source_dir = os.path.abspath(dcm_files_in_a_folder)
+converter.inputs.output_dir = new_output_directory # must create before running converter
+converter.inputs.bids_format = True
+converter.inputs.single_file = True
+converter.inputs.crop = False
+print(converter.cmdline)
+converter.run()
+```
 
 # preprocessing pipeline
 ## motion correction, susan smoothing etc
