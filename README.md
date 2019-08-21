@@ -1,6 +1,21 @@
 # BOLD5000_autoencoder
 autoencoder trained on BOLD5000 dataset
 
+# Requirements
+- Python 3.5+
+- mricrogl - convert dcm to nii.gz, dcm2niix package
+- mricon - convert dcm to nii.gz, particularly for structural scans, dcm2nii package
+- FSL 5.0.10
+- Freesurfer 6.0.0 (optional for structural scan processing)
+- AFNI - stable version
+## Python Libraries
+- numpy 1.16.1
+- pandas 0.20.3
+- nipype 1.1.9
+- nibabel 2.4.1
+- scikit-learning 0.20.3
+- pytorch-cpu 1.2
+
 # [Data: BOLD500](https://bold5000.github.io)
 
 link to download the data: https://figshare.com/articles/BOLD5000/6459449
