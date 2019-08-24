@@ -19,7 +19,7 @@ autoencoder trained on BOLD5000 dataset
 
 # Check List:
 - [x] download and preprocess the BOLD5000 dataset
-- [ ] get relevant volumes from the preprocessed data
+- [x] get relevant volumes from the preprocessed data
 - [ ] train a simple autoencoder with the data
 - [ ] train a variational autoencoder with the data
 - [ ] train a convolutional neural network using the pretrained simple autoencoder with the BOLD data and images
