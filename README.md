@@ -25,7 +25,7 @@ autoencoder trained on BOLD5000 dataset
 - [ ] train a convolutional neural network using the pretrained simple autoencoder with the BOLD data and images
 - [ ] examine the generalizability of the simple/variational autoencoder to a new fMRI dataset, using the autoencoder as a "feature extractor"
 
-# Step 0 [Download Data: BOLD500](https://bold5000.github.io)
+# Step 0 [Download Data: BOLD5000](https://bold5000.github.io)
 
 link to download the data: https://figshare.com/articles/BOLD5000/6459449
 
