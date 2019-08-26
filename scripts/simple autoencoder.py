@@ -186,14 +186,16 @@ if __name__ == '__main__':
     import torch
     from torch.autograd import Variable
     
-    dataset = customizedDataset('../data/train/')
+    train_dataset = customizedDataset('../data/train/')
+    valid_dataset = customizedDataset('../data/validation/')
     
     batch_size = 10
     lr = 1e-3
     
     torch.cuda.empty_cache()
     
-    dataloader = DataLoader(dataset, batch_size = batch_size, shuffle=True, num_workers=2)
+    dataloader_train = DataLoader(train_dataset, batch_size = batch_size, shuffle=True, num_workers=2)
+    dataloader_valid = DataLoader(valid_dataset, batch_size = batch_size, shuffle=False,num_workers=2)
     
     encoder = encoder3D()
     decoder = decoder3D()#;rec = decoder(out);print(rec.shape)
@@ -202,7 +204,7 @@ if __name__ == '__main__':
     loss_func,optimizer = createLossAndOptimizer(autoencoder,learning_rate = lr)
     
     total_loss = 0.
-    for ii, batch in enumerate(dataloader):
+    for ii, batch in enumerate(dataloader_train):
         
         inputs = Variable(batch.unsqueeze(1)).cuda()
         
@@ -218,7 +220,16 @@ if __name__ == '__main__':
         
         print(f'epoch 1-{ii + 1},{total_loss/(ii+1):.4f}')
         
-        
+    valid_loss = 0.
+    with torch.no_grad():
+        for ii,batch in enumerate(dataloader_valid):
+            inputs = Variable(batch.unsqueeze(1)).cuda()
+            outputs = autoencoder(inputs)
+            loss_batch = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
+            valid_loss += loss_batch.data
+    valid_loss /= ii + 1
+    
+    print(f'epoch 1, validation loss = {valid_loss:.4f}')
 
 
 
