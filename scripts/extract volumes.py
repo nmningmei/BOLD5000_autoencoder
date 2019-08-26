@@ -29,6 +29,9 @@ import pandas as pd
 from glob import glob
 from tqdm import tqdm
 from nilearn.input_data import NiftiMasker
+from nipype.interfaces import afni,fsl
+from nilearn.image import resample_img
+from nibabel import load as load_fmri
 
 data_dir    = '../data/converted'
 reshaped    = glob(
@@ -36,6 +39,7 @@ reshaped    = glob(
                             data_dir,
                             "*/*/*/*/*",
                             "filtered_reshaped.nii.gz"))
+target_func = load_fmri(os.path.abspath(os.path.join(data_dir,'target_func.nii.gz')))
 saving_dir  = '../data/volume_of_interest'
 if not os.path.exists(saving_dir):
     os.mkdir(saving_dir)
@@ -47,10 +51,36 @@ for idx in tqdm(range(len(reshaped))):
     n_run               = int(re.findall(r'\d+',re.findall(r'Run-\d+',picked_data)[0])[0])
     picked_data_mask    = os.path.join('/'.join(picked_data.split('/')[:-2]),
                                        'mask.nii.gz')
-    masker              = NiftiMasker(mask_img      = picked_data_mask,
-                                      standardize   = True,
-                                      detrend       = True,
-                                      t_r           = 2,
+    
+    ###########################################################################
+    resample3d = afni.utils.Resample(voxel_size = (2.386364,2.386364,2.4))
+    resample3d.inputs.in_file = picked_data_mask
+    resample3d.inputs.outputtype = 'NIFTI_GZ'
+    resample3d.inputs.out_file = picked_data_mask.replace('mask.nii.gz',
+                                                          'mask_resample.nii.gz')
+    print(resample3d.cmdline)
+    resample3d.run()
+    
+    resampled = resample_img(resample3d.inputs.out_file,
+                             target_affine = target_func.affine,
+                             target_shape = (88,88,66))
+    resampled.to_filename(picked_data_mask.replace('mask.nii.gz',
+                                                   'mask_reshaped.nii.gz'))
+    binarize = fsl.ImageMaths(op_string = '-bin')
+    binarize.inputs.in_file = picked_data_mask.replace('mask.nii.gz',
+                                                       'mask_reshaped.nii.gz')
+    binarize.inputs.out_file = picked_data_mask.replace('mask.nii.gz',
+                                                        'mask_reshaped_bin.nii.gz')
+    binarize.run()
+    os.remove(picked_data_mask.replace('mask.nii.gz','mask_resample.nii.gz'))
+    os.remove(picked_data_mask.replace('mask.nii.gz','mask_reshaped.nii.gz'))
+    
+    ###########################################################################
+    masker              = NiftiMasker(mask_img      = picked_data_mask.replace('mask.nii.gz',
+                                                                               'mask_reshaped_bin.nii.gz'),
+#                                      standardize   = True,
+#                                      detrend       = True,
+#                                      t_r           = 2,
                                       )
     BOLD                = masker.fit_transform(picked_data)
     timepoints          = np.arange(start = 0,stop = 400,step = 2)[:BOLD.shape[0]]
@@ -76,6 +106,7 @@ for idx in tqdm(range(len(reshaped))):
         saving_name = os.path.join(saving_dir,
                                    f'{sub_name}_session{n_session}_run{n_run}_volume{ii+1}.nii.gz')
         back_to_3D.to_filename(saving_name)
+        
 
 
 
