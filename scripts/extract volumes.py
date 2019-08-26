@@ -20,6 +20,8 @@ total of 388 sec (6 min 28 sec) of data acquired in each run.
 
 TR = 2 s
 TE = 30 ms
+
+Extract volumes 4 - 8 seconds after the onset of the image
 """
 
 import os
