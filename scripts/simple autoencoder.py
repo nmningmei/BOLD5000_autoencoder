@@ -24,7 +24,6 @@ class customizedDataset(Dataset):
         self.samples = []
         
         for item in glob(os.path.join(data_root,'*.nii.gz')):
-#            fmri = load_fmri(item)
             self.samples.append(item)
     def __len__(self):
         return len(self.samples)
@@ -34,48 +33,48 @@ class customizedDataset(Dataset):
 
 class encoder3D(nn.Module):
     def __init__(self,
-                 batch_size = 10,
-                 in_channels = [1,16,32],
-                 out_channels = [16,32,32],
-                 kernel_size = 3,
-                 stride = 1,
-                 padding_mode = 'valid',
-                 pool_kernal_size = 2,
+                 batch_size         = 10,
+                 in_channels        = [1,16,32],
+                 out_channels       = [16,32,32],
+                 kernel_size        = 3,
+                 stride             = 1,
+                 padding_mode       = 'valid',
+                 pool_kernal_size   = 2,
                  ):
         super(encoder3D, self).__init__()
         
-        self.batch_size = batch_size
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.padding_mode = padding_mode
-        self.pool_kernal_size = pool_kernal_size
+        self.batch_size             = batch_size
+        self.in_channels            = in_channels
+        self.out_channels           = out_channels
+        self.kernel_size            = kernel_size
+        self.stride                 = stride
+        self.padding_mode           = padding_mode
+        self.pool_kernal_size       = pool_kernal_size
         
-        self.conv3d_1_16 = nn.Conv3d(in_channels = self.in_channels[0],
-                                       out_channels = self.out_channels[0],
-                                       kernel_size = self.kernel_size,
-                                       stride = self.stride,
-                                       padding_mode = self.padding_mode,
-                                       )
-        self.conv3d_16_32 = nn.Conv3d(in_channels = self.in_channels[1],
-                                       out_channels = self.out_channels[1],
-                                       kernel_size = self.kernel_size,
-                                       stride = self.stride,
-                                       padding_mode = self.padding_mode,
-                                       )
-        self.conv3d_32_32 = nn.Conv3d(in_channels = self.in_channels[2],
-                                       out_channels = self.out_channels[2],
-                                       kernel_size = self.kernel_size,
-                                       stride = self.stride,
-                                       padding_mode = self.padding_mode,
-                                       )
-        self.activation = nn.LeakyReLU(inplace = True)
-        self.pooling = nn.AvgPool3d(kernel_size = self.pool_kernal_size,
-                                    stride = 2,
+        self.conv3d_1_16 = nn.Conv3d(in_channels    = self.in_channels[0],
+                                     out_channels   = self.out_channels[0],
+                                     kernel_size    = self.kernel_size,
+                                     stride         = self.stride,
+                                     padding_mode   = self.padding_mode,
+                                     )
+        self.conv3d_16_32 = nn.Conv3d(in_channels   = self.in_channels[1],
+                                      out_channels  = self.out_channels[1],
+                                      kernel_size   = self.kernel_size,
+                                      stride        = self.stride,
+                                      padding_mode  = self.padding_mode,
+                                      )
+        self.conv3d_32_32 = nn.Conv3d(in_channels   = self.in_channels[2],
+                                      out_channels  = self.out_channels[2],
+                                      kernel_size   = self.kernel_size,
+                                      stride        = self.stride,
+                                      padding_mode  = self.padding_mode,
+                                      )
+        self.activation = nn.LeakyReLU(inplace      = True)
+        self.pooling = nn.AvgPool3d(kernel_size     = self.pool_kernal_size,
+                                    stride          = 2,
                                     )
-        self.norm16 = nn.BatchNorm3d(num_features = 16)
-        self.norm32 = nn.BatchNorm3d(num_features = 32)
+        self.norm16 = nn.BatchNorm3d(num_features   = 16)
+        self.norm32 = nn.BatchNorm3d(num_features   = 32)
         
     def forward(self,x):
         out1 = self.activation(self.conv3d_1_16(x))
@@ -104,69 +103,65 @@ class encoder3D(nn.Module):
         return flatten
 class decoder3D(nn.Module):
     def __init__(self,
-                 batch_size = 10,
-                 in_channels = [32,16,1],
-                 out_channels = [32,16,1],
-                 kernel_size = 10,
-                 stride = 1,
-                 padding_mode = 'zeros',):
+                 batch_size     = 10,
+                 in_channels    = [32,16,1],
+                 out_channels   = [32,16,1],
+                 kernel_size    = 10,
+                 stride         = 1,
+                 padding_mode   = 'zeros',):
         super(decoder3D, self).__init__()
         
-        self.batch_size = batch_size
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.padding_mode = padding_mode
+        self.batch_size         = batch_size
+        self.in_channels        = in_channels
+        self.out_channels       = out_channels
+        self.kernel_size        = kernel_size
+        self.stride             = stride
+        self.padding_mode       = padding_mode
         
-        self.convT3d_32_16 = nn.ConvTranspose3d(in_channels = self.in_channels[0],
-                                                out_channels = self.out_channels[1],
-                                                kernel_size = self.kernel_size,
-                                                stride = self.stride,
-                                                padding_mode = self.padding_mode)
-        self.convT3d_16_16 = nn.ConvTranspose3d(in_channels = self.in_channels[1],
-                                                out_channels = self.out_channels[1],
-                                                kernel_size = self.kernel_size,
-                                                stride = self.stride,
-                                                padding_mode = self.padding_mode)
-        self.convT3d_16_1 = nn.ConvTranspose3d(in_channels = self.in_channels[1],
-                                               out_channels = self.out_channels[2],
-                                               kernel_size = self.kernel_size,
-                                               stride = self.stride,
-                                               padding_mode = self.padding_mode)
-        self.convT3d_1_1 = nn.ConvTranspose3d(in_channels = self.in_channels[2],
-                                              out_channels = self.out_channels[2],
-                                              kernel_size = self.kernel_size,#(2,2,2),
-                                              stride = self.stride,#(1,1,1),
-                                              padding_mode = self.padding_mode)
+        self.convT3d_32_16 = nn.ConvTranspose3d(in_channels     = self.in_channels[0],
+                                                out_channels    = self.out_channels[1],
+                                                kernel_size     = self.kernel_size,
+                                                stride          = self.stride,
+                                                padding_mode    = self.padding_mode)
+        self.convT3d_16_16 = nn.ConvTranspose3d(in_channels     = self.in_channels[1],
+                                                out_channels    = self.out_channels[1],
+                                                kernel_size     = self.kernel_size,
+                                                stride          = self.stride,
+                                                padding_mode    = self.padding_mode)
+        self.convT3d_16_1 = nn.ConvTranspose3d(in_channels      = self.in_channels[1],
+                                               out_channels     = self.out_channels[2],
+                                               kernel_size      = self.kernel_size,
+                                               stride           = self.stride,
+                                               padding_mode     = self.padding_mode)
+        self.convT3d_1_1 = nn.ConvTranspose3d(in_channels       = self.in_channels[2],
+                                              out_channels      = self.out_channels[2],
+                                              kernel_size       = self.kernel_size,#(2,2,2),
+                                              stride            = self.stride,#(1,1,1),
+                                              padding_mode      = self.padding_mode)
         
         
-        self.activation = nn.LeakyReLU(inplace = True)
-        self.output_activation = nn.Softsign()
-        self.norm = nn.BatchNorm3d(num_features = 1)
-        self.norm16 = nn.BatchNorm3d(num_features = 16)
+        self.activation         = nn.LeakyReLU(inplace          = True)
+        self.output_activation  = nn.Softsign()
+        self.norm               = nn.BatchNorm3d(num_features   = 1)
+        self.norm16             = nn.BatchNorm3d(num_features   = 16)
         
     def forward(self,x):
         reshaped = x.view(self.batch_size,32,7,7,4)
         
         out1 = self.activation(self.convT3d_32_16(reshaped))
         out1 = self.norm16(out1)
-#        print(out1.shape)
         out1 = functional.interpolate(out1,size = (24,24,18))
         
         out2 = self.activation(self.convT3d_16_16(out1))
         out2 = self.norm16(out2)
-#        print(out2.shape)
         out2 = functional.interpolate(out2,size = (40,40,30))
         
         out3 = self.activation(self.convT3d_16_16(out2))
         out3 = self.norm16(out3)
-#        print(out3.shape)
         out3 = functional.interpolate(out3,size = (56,56,42))
         
         out4 = self.activation(self.convT3d_16_1(out3))
         out4 = self.norm(out4)
-#        print(out4.shape)
         out4 = functional.interpolate(out4,size = (88,88,66))
         out4 = self.output_activation(out4)
         
@@ -176,35 +171,54 @@ class decoder3D(nn.Module):
 def createLossAndOptimizer(net, learning_rate=0.001):
     
     #Loss function
-    loss = nn.MSELoss()
+    loss        = nn.MSELoss()
     
     #Optimizer
-    optimizer = optim.Adam(net.parameters(), lr=learning_rate)
+    optimizer   = optim.Adam(net.parameters(), lr = learning_rate)
     
     return(loss, optimizer)
 def train_loop(net,loss_fuc,optimizer,dataloader,idx_epoch = 1):
-    
-    train_loss = 0.
+    """
+    A for-loop of train the autoencoder for 1 epoch
+    """
+    train_loss      = 0.
     for ii,batch in enumerate(dataloader):
-        inputs = Variable(batch.unsqueeze(1)).cuda()
+        # load the data to memory
+        if torch.cuda.is_available():
+            inputs  = Variable(batch.unsqueeze(1)).cuda()
+        else:
+            inputs  = Variable(batch.unsqueeze(1))
+        # one of the most important step, reset the gradients
         optimizer.zero_grad()
-        outputs = net(inputs)
-        
-        loss_batch = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
+        # compute the outputs
+        outputs     = net(inputs)
+        # compute the losses
+        loss_batch  = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
+        # backpropagation
         loss_batch.backward()
+        # modify the weights
         optimizer.step()
-        train_loss += loss_batch.data
+        # record the training loss of a mini-batch
+        train_loss  += loss_batch.data
         print(f'epoch {idx_epoch}-{ii + 1},{train_loss/(ii+1):.4f}')
         
     return train_loss
 def validation_loop(net,loss_func,dataloader,idx_epoch = 1):
+    # specify the gradient being frozen
     with no_grad():
-        valid_loss = 0.
+        valid_loss      = 0.
         for ii,batch in enumerate(dataloader):
-            inputs = Variable(batch.unsqueeze(1)).cuda()
-            outputs = autoencoder(inputs)
-            loss_batch = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
-            valid_loss += loss_batch.data
+            # load the data to memory
+            if torch.cuda.is_available():
+                inputs  = Variable(batch.unsqueeze(1)).cuda()
+            else:
+                inputs  = Variable(batch.unsqueeze(1))
+            # compute the outputs
+            outputs     = autoencoder(inputs)
+            # compute the losses
+            loss_batch  = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
+            # record the validation loss of a mini-batch
+            valid_loss  += loss_batch.data
         valid_loss = valid_loss / (ii + 1)
     return valid_loss
 if __name__ == '__main__':
@@ -212,14 +226,14 @@ if __name__ == '__main__':
     import torch
     import numpy as np
     
-    train_dataset = customizedDataset('../data/train/')
-    valid_dataset = customizedDataset('../data/validation/')
+    train_dataset   = customizedDataset('../data/train/')
+    valid_dataset   = customizedDataset('../data/validation/')
     
-    saving_name = '../results/simple_autoencoder.pth'
+    saving_name     = '../results/simple_autoencoder.pth'
     
-    batch_size = 10
-    lr = 1e-3
-    n_epochs = 200
+    batch_size      = 10
+    lr              = 1e-3
+    n_epochs        = 200
     
     torch.cuda.empty_cache()
     torch.manual_seed(12345)
@@ -228,21 +242,26 @@ if __name__ == '__main__':
     dataloader_train = DataLoader(train_dataset, batch_size = batch_size, shuffle=True, num_workers=2)
     dataloader_valid = DataLoader(valid_dataset, batch_size = batch_size, shuffle=False,num_workers=2)
     
-    encoder = encoder3D()
-    decoder = decoder3D()#;rec = decoder(out);print(rec.shape)
-    
-    autoencoder = nn.Sequential(*[encoder,decoder]).cuda()
+    encoder             = encoder3D()
+    decoder             = decoder3D()#;rec = decoder(out);print(rec.shape)
+    if torch.cuda.is_available():
+        autoencoder     = nn.Sequential(*[encoder,decoder]).cuda()
+    else:
+        autoencoder     = nn.Sequential(*[encoder,decoder])
     loss_func,optimizer = createLossAndOptimizer(autoencoder,learning_rate = lr)
     
-    best_valid_loss = torch.from_numpy(np.array(np.inf))
+    best_valid_loss         = torch.from_numpy(np.array(np.inf))
     for idx_epoch in range(n_epochs):
         # train
-        train_loss = train_loop(autoencoder,loss_func,optimizer,dataloader_train,idx_epoch)
+        train_loss          = train_loop(autoencoder,loss_func,optimizer,dataloader_train,idx_epoch)
         # validation
         if idx_epoch > 0:
-            encoder = encoder3D()
-            decoder = decoder3D()
-            autoencoder = nn.Sequential(*[encoder,decoder]).cuda()
+            encoder         = encoder3D()
+            decoder         = decoder3D()
+            if torch.cuda.is_available():
+                autoencoder = nn.Sequential(*[encoder,decoder]).cuda()
+            else:
+                autoencoder = nn.Sequential(*[encoder,decoder])
             autoencoder.load_state_dict(torch.load(saving_name))
             autoencoder.eval()
         valid_loss = validation_loop(autoencoder,loss_func,dataloader_valid,idx_epoch)
