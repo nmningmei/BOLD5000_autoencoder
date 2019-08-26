@@ -70,27 +70,27 @@ class encoder3D(nn.Module):
                                       padding_mode  = self.padding_mode,
                                       )
         self.activation = nn.LeakyReLU(inplace      = True)
-        self.pooling = nn.AvgPool3d(kernel_size     = self.pool_kernal_size,
+        self.pooling    = nn.AvgPool3d(kernel_size     = self.pool_kernal_size,
                                     stride          = 2,
                                     )
         self.norm16 = nn.BatchNorm3d(num_features   = 16)
         self.norm32 = nn.BatchNorm3d(num_features   = 32)
         
     def forward(self,x):
-        out1 = self.activation(self.conv3d_1_16(x))
-        out1 = self.norm16(out1)
-        out1 = self.activation(self.conv3d_16_32(out1))
-        out1 = self.norm32(out1)
+        out1 = self.norm16(self.conv3d_1_16(x))
+        out1 = self.activation(out1)
+        out1 = self.norm32(self.conv3d_16_32(out1))
+        out1 = self.activation(out1)
         out1 = self.pooling(out1)
-        out2 = self.activation(self.conv3d_32_32(out1))
-        out2 = self.norm32(out2)
-        out2 = self.activation(self.conv3d_32_32(out2))
-        out2 = self.norm32(out2)
+        out2 = self.norm32(self.conv3d_32_32(out1))
+        out2 = self.activation(out2)
+        out2 = self.norm32(self.conv3d_32_32(out2))
+        out2 = self.activation(out2)
         out2 = self.pooling(out2)
-        out3 = self.activation(self.conv3d_32_32(out2))
-        out3 = self.norm32(out3)
-        out3 = self.activation(self.conv3d_32_32(out3))
-        out3 = self.norm32(out3)
+        out3 = self.norm32(self.conv3d_32_32(out2))
+        out3 = self.activation(out3)
+        out3 = self.norm32(self.conv3d_32_32(out3))
+        out3 = self.activation(out3)
         out3 = self.pooling(out3)
 #        print(out3.shape)
 #        out4 = self.activation(self.conv3d_32_32(out3))
@@ -148,20 +148,20 @@ class decoder3D(nn.Module):
     def forward(self,x):
         reshaped = x.view(self.batch_size,32,7,7,4)
         
-        out1 = self.activation(self.convT3d_32_16(reshaped))
-        out1 = self.norm16(out1)
+        out1 = self.norm16(self.convT3d_32_16(reshaped))
+        out1 = self.activation(out1)
         out1 = functional.interpolate(out1,size = (24,24,18))
         
-        out2 = self.activation(self.convT3d_16_16(out1))
-        out2 = self.norm16(out2)
+        out2 = self.norm16(self.convT3d_16_16(out1))
+        out2 = self.activation(out2)
         out2 = functional.interpolate(out2,size = (40,40,30))
         
-        out3 = self.activation(self.convT3d_16_16(out2))
-        out3 = self.norm16(out3)
+        out3 = self.norm16(self.convT3d_16_16(out2))
+        out3 = self.activation(out3)
         out3 = functional.interpolate(out3,size = (56,56,42))
         
-        out4 = self.activation(self.convT3d_16_1(out3))
-        out4 = self.norm(out4)
+        out4 = self.norm(self.convT3d_16_1(out3))
+        out4 = self.activation(out4)
         out4 = functional.interpolate(out4,size = (88,88,66))
         out4 = self.output_activation(out4)
         
