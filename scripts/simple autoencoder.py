@@ -210,9 +210,12 @@ def validation_loop(net,loss_func,dataloader,idx_epoch = 1):
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
     import torch
+    import numpy as np
     
     train_dataset = customizedDataset('../data/train/')
     valid_dataset = customizedDataset('../data/validation/')
+    
+    saving_name = '../results/simple_autoencoder.pth'
     
     batch_size = 10
     lr = 1e-3
@@ -231,12 +234,25 @@ if __name__ == '__main__':
     autoencoder = nn.Sequential(*[encoder,decoder]).cuda()
     loss_func,optimizer = createLossAndOptimizer(autoencoder,learning_rate = lr)
     
+    best_valid_loss = torch.from_numpy(np.array(np.inf))
     for idx_epoch in range(n_epochs):
-        
+        # train
         train_loss = train_loop(autoencoder,loss_func,optimizer,dataloader_train,idx_epoch)
+        # validation
+        if idx_epoch > 0:
+            encoder = encoder3D()
+            decoder = decoder3D()
+            autoencoder = nn.Sequential(*[encoder,decoder]).cuda()
+            autoencoder.load_state_dict(torch.load(saving_name))
+            autoencoder.eval()
         valid_loss = validation_loop(autoencoder,loss_func,dataloader_valid,idx_epoch)
     
     print(f'epoch {idx_epoch}, validation loss = {valid_loss:.4f}')
+    
+    if valid_loss < best_valid_loss:
+        best_valid_loss = valid_loss.copy()
+        torch.save(autoencoder.state_dict(),saving_name)
+        print('saving model')
 
 
 
