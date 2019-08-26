@@ -14,9 +14,10 @@ from glob import glob
 from torch.utils.data import Dataset
 from nibabel import load as load_fmri
 
-from torch import nn
+from torch import nn,no_grad
 from torch.nn import functional
 import torch.optim as optim
+from torch.autograd import Variable
 
 class customizedDataset(Dataset):
     def __init__(self,data_root):
@@ -181,18 +182,45 @@ def createLossAndOptimizer(net, learning_rate=0.001):
     optimizer = optim.Adam(net.parameters(), lr=learning_rate)
     
     return(loss, optimizer)
+def train_loop(net,loss_fuc,optimizer,dataloader,idx_epoch = 1):
+    
+    train_loss = 0.
+    for ii,batch in enumerate(dataloader):
+        inputs = Variable(batch.unsqueeze(1)).cuda()
+        optimizer.zero_grad()
+        outputs = net(inputs)
+        
+        loss_batch = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
+        loss_batch.backward()
+        optimizer.step()
+        train_loss += loss_batch.data
+        print(f'epoch {idx_epoch}-{ii + 1},{train_loss/(ii+1):.4f}')
+        
+    return train_loss
+def validation_loop(net,loss_func,dataloader,idx_epoch = 1):
+    with no_grad():
+        valid_loss = 0.
+        for ii,batch in enumerate(dataloader):
+            inputs = Variable(batch.unsqueeze(1)).cuda()
+            outputs = autoencoder(inputs)
+            loss_batch = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
+            valid_loss += loss_batch.data
+        valid_loss = valid_loss / (ii + 1)
+    return valid_loss
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
     import torch
-    from torch.autograd import Variable
     
     train_dataset = customizedDataset('../data/train/')
     valid_dataset = customizedDataset('../data/validation/')
     
     batch_size = 10
     lr = 1e-3
+    n_epochs = 200
     
     torch.cuda.empty_cache()
+    torch.manual_seed(12345)
+    if torch.cuda.is_available():torch.cuda.manual_seed(12345)
     
     dataloader_train = DataLoader(train_dataset, batch_size = batch_size, shuffle=True, num_workers=2)
     dataloader_valid = DataLoader(valid_dataset, batch_size = batch_size, shuffle=False,num_workers=2)
@@ -203,33 +231,12 @@ if __name__ == '__main__':
     autoencoder = nn.Sequential(*[encoder,decoder]).cuda()
     loss_func,optimizer = createLossAndOptimizer(autoencoder,learning_rate = lr)
     
-    total_loss = 0.
-    for ii, batch in enumerate(dataloader_train):
+    for idx_epoch in range(n_epochs):
         
-        inputs = Variable(batch.unsqueeze(1)).cuda()
-        
-        optimizer.zero_grad()
-        
-        outputs = autoencoder(inputs)
-        
-        loss_batch = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
-        loss_batch.backward()
-        optimizer.step()
-        
-        total_loss += loss_batch.data
-        
-        print(f'epoch 1-{ii + 1},{total_loss/(ii+1):.4f}')
-        
-    valid_loss = 0.
-    with torch.no_grad():
-        for ii,batch in enumerate(dataloader_valid):
-            inputs = Variable(batch.unsqueeze(1)).cuda()
-            outputs = autoencoder(inputs)
-            loss_batch = loss_func(outputs.squeeze(1),inputs.squeeze(1),)
-            valid_loss += loss_batch.data
-    valid_loss /= ii + 1
+        train_loss = train_loop(autoencoder,loss_func,optimizer,dataloader_train,idx_epoch)
+        valid_loss = validation_loop(autoencoder,loss_func,dataloader_valid,idx_epoch)
     
-    print(f'epoch 1, validation loss = {valid_loss:.4f}')
+    print(f'epoch {idx_epoch}, validation loss = {valid_loss:.4f}')
 
 
 
