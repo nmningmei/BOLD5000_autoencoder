@@ -31,7 +31,7 @@ link to download the data: https://figshare.com/articles/BOLD5000/6459449
 
 Please note: only "Unfiltered" data were used.
 ## step 0.1.unzip
-## step 0.2.convet dcm to nii.gz
+## step 0.2.convet dcm to nii.gz (nipype, mricrogl and mricon are needed)
 ```
 from nipype.interfaces.dcm2nii import Dcm2niix
 converter = Dcm2niix()
@@ -44,11 +44,12 @@ print(converter.cmdline)
 converter.run()
 ```
 
-# Step 1.Preprocessing Pipeline - functional scans
-## step 1.1.[motion correction, susan smoothing etc. Details of the pipeline, click here.](https://nbviewer.jupyter.org/github/nmningmei/preprocessing_pipelines/blob/master/FSL_vs_nipype_fsl_preprocessing.ipynb)
+# Step 1.Preprocessing Pipeline - functional scans (nipype, fsl, and freesurfer are needed)
+## step 1.1.[MCFLIRT, susan smoothing etc. Details of the pipeline, click here.](https://colab.research.google.com/github/nmningmei/preprocessing_pipelines/blob/master/FSL_vs_nipype_fsl_preprocessing.ipynb#scrollTo=QF77EkMJrrrI)
 ![prefmri](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/preprocessing_step_1.png)
-## step 1.2.ICA AROMA denoising
+## step 1.2.[ICA AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991) [denoising](https://github.com/maartenmennes/ICA-AROMA) - you have to download the github repository to go with the data. - nipype, fsl, and ICA AROMA github repo needed
 ```
+from nipype.interfaces.fsl import ICA_AROMA
 # get the subject name
 sub_name = np.unique(re.findall(r'CSI\d',picked_data))[0]
 # get the session and run
@@ -102,12 +103,12 @@ AROMA_obj.inputs.denoise_type       = 'nonaggr'
 AROMA_obj.inputs.out_dir            = os.path.abspath(output_dir)
 # with "-ow" is to overwrite the old results
 cmdline             = 'python ../ICA_AROMA/' + AROMA_obj.cmdline + ' -ow'
-
+# run the graph we set up above
 os.system(cmdline)
 ```
-## step 1.3.register functional scans to structural scans
+## step 1.3.register functional scans to structural scans - nipype, fsl, and freesurfer needed
 ![reg](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/registrate%20funtional%20scans%20to%20sctural%20scans.png)
-## step 1.4.high pass filter at 60 Hz
+## step 1.4.high pass filter at 60 Hz - nipype and fsl are needed
 ![hpf](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/highpass_temp.png)
 
 ## step 1.4.reshape the volumes into 88 x 88 x 66 with larger voxel size.
