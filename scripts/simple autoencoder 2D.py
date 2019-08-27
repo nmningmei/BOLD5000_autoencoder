@@ -223,18 +223,15 @@ def createLossAndOptimizer(net, learning_rate=0.001):
     
     return(loss, optimizer)
 
-def train_loop(net,loss_fuc,optimizer,dataloader,idx_epoch = 1):
+def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1):
     """
     A for-loop of train the autoencoder for 1 epoch
     """
     train_loss      = 0.
     for ii,batch in enumerate(dataloader):
-        try:
+        if ii + 1 < len(dataloader):
             # load the data to memory
-            if torch.cuda.is_available():
-                inputs  = Variable(batch).cuda()
-            else:
-                inputs  = Variable(batch)
+            inputs  = Variable(batch).to(device)
             # one of the most important step, reset the gradients
             optimizer.zero_grad()
             # compute the outputs
@@ -247,22 +244,17 @@ def train_loop(net,loss_fuc,optimizer,dataloader,idx_epoch = 1):
             optimizer.step()
             # record the training loss of a mini-batch
             train_loss  += loss_batch.data
-            print(f'epoch {idx_epoch+1}-{ii + 1:3.0f}/{100*(ii+1)/len(dataloader):2.3f}%,loss = {train_loss/(ii+1):.6f}')
-        except Exception as e:
-            print(e)
-    return train_loss
+            print(f'epoch {idx_epoch+stp}-{ii + 1:3.0f}/{100*(ii+1)/len(dataloader):2.3f}%,loss = {train_loss/(ii+1):.6f}')
+    return train_loss/(ii+1)
 
-def validation_loop(net,loss_func,dataloader,idx_epoch = 1):
+def validation_loop(net,loss_func,dataloader,device,idx_epoch = 1):
     # specify the gradient being frozen
     with no_grad():
         valid_loss      = 0.
         for ii,batch in tqdm(enumerate(dataloader)):
-            try:
+            if ii + 1 < len(dataloader):
                 # load the data to memory
-                if torch.cuda.is_available():
-                    inputs  = Variable(batch).cuda()
-                else:
-                    inputs  = Variable(batch)
+                inputs  = Variable(batch).to(device)
                 # compute the outputs
                 outputs     = autoencoder(inputs.permute(0,3,1,2))
                 # compute the losses
@@ -270,8 +262,6 @@ def validation_loop(net,loss_func,dataloader,idx_epoch = 1):
                 # record the validation loss of a mini-batch
                 valid_loss  += loss_batch.data
                 denominator = ii
-            except Exception as e:
-                print(e)
         valid_loss = valid_loss / (denominator + 1)
     return valid_loss
 
@@ -282,14 +272,16 @@ if __name__ == '__main__':
     import numpy as np
     import pandas as pd
     print()
-    saving_name     = '../results/simple_autoencoder3D.pth'
+    saving_name     = '../results/simple_autoencoder2D.pth'
     
     batch_size      = 10
     lr              = 1e-3
     n_epochs        = 200
     print('set up random seeds')
     torch.manual_seed(12345)
-    if torch.cuda.is_available():torch.cuda.empty_cache();torch.cuda.manual_seed(12345)
+    if torch.cuda.is_available():torch.cuda.empty_cache();torch.cuda.manual_seed(12345);
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'device:{device}')
     print('set up data loaders')
     train_dataset   = customizedDataset('../data/train/')
     valid_dataset   = customizedDataset('../data/validation/')
@@ -298,41 +290,50 @@ if __name__ == '__main__':
     print('set up autoencoder')
     encoder = encoder2D()
     decoder = decoder2D()
-    if torch.cuda.is_available():
-        autoencoder     = nn.Sequential(*[encoder,decoder]).cuda()
+    autoencoder     = nn.Sequential(*[encoder,decoder]).to(device)
+    if os.path.exists(saving_name.replace(".pth",".csv")):
+        autoencoder.load_state_dict(torch.load(saving_name))
+        autoencoder.eval()
+        results = pd.read_csv(saving_name.replace(".pth",".csv"))
+        results = {col_name:list(results[col_name].values) for col_name in results.columns}
+        best_valid_loss = torch.tensor(results['valid_loss'][-1],dtype = torch.float64)
+        stp = 1 + len(results['valid_loss'])
     else:
-        autoencoder     = nn.Sequential(*[encoder,decoder])
+        print('initialize')
+        results = dict(
+                train_loss  = [],
+                valid_loss  = [],
+                epochs      = [])
+        best_valid_loss         = torch.from_numpy(np.array(np.inf))
+        stp = 1
+#    if not torch.cuda.is_available():
+#        autoencoder     = torch.nn.parallel.DistributedDataParallel(autoencoder)
     loss_func,optimizer = createLossAndOptimizer(autoencoder,learning_rate = lr)
-    print('initialize')
-    results = dict(
-            train_loss  = [],
-            valid_loss  = [],
-            epochs      = [])
-    best_valid_loss         = torch.from_numpy(np.array(np.inf))
     for idx_epoch in range(n_epochs):
         # train
-        train_loss          = train_loop(autoencoder,loss_func,optimizer,dataloader_train,idx_epoch)
+        print('training ...')
+        train_loss          = train_loop(autoencoder,loss_func,optimizer,dataloader_train,device,stp,idx_epoch)
         # validation
         if idx_epoch > 0:
-            encoder         = encoder2D()
-            decoder         = decoder2D()
-            if torch.cuda.is_available():
-                autoencoder = nn.Sequential(*[encoder,decoder]).cuda()
-            else:
-                autoencoder = nn.Sequential(*[encoder,decoder])
+            encoder = encoder2D()
+            decoder = decoder2D()
+            autoencoder     = nn.Sequential(*[encoder,decoder]).to(device)
+#            if not torch.cuda.is_available():
+#                autoencoder     = torch.nn.parallel.DistributedDataParallel(autoencoder)
             autoencoder.load_state_dict(torch.load(saving_name))
             autoencoder.eval()
-        valid_loss = validation_loop(autoencoder,loss_func,dataloader_valid,idx_epoch)
+        print('validating ...')
+        valid_loss = validation_loop(autoencoder,loss_func,dataloader_valid,device,idx_epoch)
     
-        print(f'epoch {idx_epoch + 1}, validation loss = {valid_loss:.6f}')
-        
+        print(f'epoch {idx_epoch + stp}, validation loss = {valid_loss:.6f}')
+        print('determine early stop')
         if torch.tensor(valid_loss.cpu(),dtype=torch.float64) < best_valid_loss:
             best_valid_loss = torch.tensor(valid_loss.cpu().clone().detach(),dtype=torch.float64)
             torch.save(autoencoder.state_dict(),saving_name)
             print('saving model')
-        results['train_loss'].append(train_loss)
-        results['valid_loss'].append(valid_loss)
-        results['epochs'].append(idx_epoch + 1)
+        results['train_loss'].append(train_loss.detach().cpu().numpy())
+        results['valid_loss'].append(valid_loss.detach().cpu().numpy())
+        results['epochs'].append(idx_epoch + stp)
         results_to_save = pd.DataFrame(results)
         results_to_save.to_csv(saving_name.replace(".pth",".csv"),index = False)
 
