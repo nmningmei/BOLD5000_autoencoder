@@ -34,8 +34,9 @@ class customizedDataset(Dataset):
     def __getitem__(self, idx):
         temp = load_fmri(self.samples[idx]).get_data()
         temp[temp < scoreatpercentile(temp.flatten(),2)] = 0
-        temp = temp / temp.max()
-        return temp
+        max_weight = temp.max()
+        temp = temp / max_weight
+        return temp,max_weight
 
 class encoder2D(nn.Module):
     def __init__(self,
@@ -95,6 +96,7 @@ class encoder2D(nn.Module):
                                         )
         
         self.activation = nn.CELU(inplace      = True)
+        self.output_activation = nn.Sigmoid()
         self.pooling = nn.AvgPool2d(kernel_size     = self.pool_kernal_size,
                                     stride          = 2,
                                     )
@@ -119,7 +121,7 @@ class encoder2D(nn.Module):
         out3 = self.norm512(self.conv2d_256_512(out2))
         out3 = self.activation(out3)
         out3 = self.norm512(self.conv2d_512_512(out3))
-        out3 = self.activation(out3)
+        out3 = self.output_activation(out3)
         out3 = self.pooling(out3)
         
         flatten = torch.squeeze(self.output_pooling(out3))
@@ -182,7 +184,7 @@ class decoder2D(nn.Module):
                                                      padding_mode   = self.padding_mode,)
         
         self.activation         = nn.CELU(inplace              = True)
-        self.output_activation  = nn.Softsign()
+        self.output_activation  = nn.Sigmoid()
         self.norm512                = nn.BatchNorm2d(num_features   = 512)
         self.norm256                = nn.BatchNorm2d(num_features   = 256)
         self.norm128                = nn.BatchNorm2d(num_features   = 128)
@@ -233,7 +235,7 @@ def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1):
     A for-loop of train the autoencoder for 1 epoch
     """
     train_loss      = 0.
-    for ii,batch in enumerate(dataloader):
+    for ii,(batch,_) in enumerate(dataloader):
         if ii + 1 < len(dataloader):
             # load the data to memory
             inputs  = Variable(batch).to(device)
@@ -244,22 +246,22 @@ def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1):
             # compute the losses
             loss_batch  = loss_func(outputs,inputs.permute(0,3,1,2),)
             loss_batch += 1 * torch.norm(outputs,1)
-            selected_params = torch.cat([x.view(-1) for x in net.decoder.convT2d_66_66.parameters()])
-            loss_batch += 0.01 * torch.norm(selected_params,1)
+            selected_params = torch.cat([x.view(-1) for x in net.parameters()])
+            loss_batch += 0.01 * torch.norm(selected_params,2)
             # backpropagation
             loss_batch.backward()
             # modify the weights
             optimizer.step()
             # record the training loss of a mini-batch
             train_loss  += loss_batch.data
-            print(f'epoch {idx_epoch+stp}-{ii + 1:3.0f}/{100*(ii+1)/len(dataloader):2.3f}%,loss = {train_loss/(ii+1):.6f}')
+            print(f'epoch {idx_epoch+stp}-{ii + 1:3.0f}/{100*(ii+1)/ len(dataloader):2.3f}%,loss = {train_loss/(ii+1):.6f}')
     return train_loss/(ii+1)
 
 def validation_loop(net,loss_func,dataloader,device,idx_epoch = 1):
     # specify the gradient being frozen
     with no_grad():
         valid_loss      = 0.
-        for ii,batch in tqdm(enumerate(dataloader)):
+        for ii,(batch,_) in tqdm(enumerate(dataloader)):
             if ii + 1 < len(dataloader):
                 # load the data to memory
                 inputs  = Variable(batch).to(device)
