@@ -243,7 +243,9 @@ def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1):
             outputs     = net(inputs.permute(0,3,1,2))
             # compute the losses
             loss_batch  = loss_func(outputs,inputs.permute(0,3,1,2),)
-            loss_batch += 10 * torch.norm(outputs,1)
+            loss_batch += 1 * torch.norm(outputs,1)
+            selected_params = torch.cat([x.view(-1) for x in net.decoder.convT2d_66_66.parameters()])
+            loss_batch += 0.01 * torch.norm(selected_params,1)
             # backpropagation
             loss_batch.backward()
             # modify the weights
@@ -274,6 +276,7 @@ def validation_loop(net,loss_func,dataloader,device,idx_epoch = 1):
 if __name__ == '__main__':
     print('import')
     from torch.utils.data import DataLoader
+    from collections import OrderedDict
     import torch
     import numpy as np
     import pandas as pd
@@ -296,7 +299,11 @@ if __name__ == '__main__':
     print('set up autoencoder')
     encoder = encoder2D()
     decoder = decoder2D()
-    autoencoder     = nn.Sequential(*[encoder,decoder]).to(device)
+    autoencoder     = nn.Sequential(OrderedDict(
+            [('encoder',encoder),
+             ('decoder',decoder),
+                    ]
+            )).to(device)
     if os.path.exists(saving_name.replace(".pth",".csv")):
         autoencoder.load_state_dict(torch.load(saving_name))
         autoencoder.eval()
