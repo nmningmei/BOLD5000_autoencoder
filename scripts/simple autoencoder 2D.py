@@ -14,10 +14,12 @@ from glob import glob
 from tqdm import tqdm
 from torch.utils.data import Dataset
 from nibabel import load as load_fmri
+from scipy.stats import scoreatpercentile
 
+import torch
 from torch import nn,no_grad
 from torch.nn import functional
-import torch.optim as optim
+from torch import optim
 from torch.autograd import Variable
 
 class customizedDataset(Dataset):
@@ -30,7 +32,10 @@ class customizedDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        return load_fmri(self.samples[idx]).get_data() / load_fmri(self.samples[idx]).get_data().max()
+        temp = load_fmri(self.samples[idx]).get_data()
+        temp[temp < scoreatpercentile(temp.flatten(),2)] = 0
+        temp = temp / temp.max()
+        return temp
 
 class encoder2D(nn.Module):
     def __init__(self,
@@ -89,7 +94,7 @@ class encoder2D(nn.Module):
                                         padding_mode   = self.padding_mode,
                                         )
         
-        self.activation = nn.LeakyReLU(inplace      = True)
+        self.activation = nn.CELU(inplace      = True)
         self.pooling = nn.AvgPool2d(kernel_size     = self.pool_kernal_size,
                                     stride          = 2,
                                     )
@@ -176,7 +181,7 @@ class decoder2D(nn.Module):
                                                      stride         = self.stride,
                                                      padding_mode   = self.padding_mode,)
         
-        self.activation         = nn.LeakyReLU(inplace              = True)
+        self.activation         = nn.CELU(inplace              = True)
         self.output_activation  = nn.Softsign()
         self.norm512                = nn.BatchNorm2d(num_features   = 512)
         self.norm256                = nn.BatchNorm2d(num_features   = 256)
@@ -216,10 +221,10 @@ class decoder2D(nn.Module):
 def createLossAndOptimizer(net, learning_rate=0.001):
     
     #Loss function
-    loss        = nn.MSELoss()
+    loss        = nn.L1Loss()
     
     #Optimizer
-    optimizer   = optim.Adam(net.parameters(), lr = learning_rate)
+    optimizer   = optim.Adam(net.parameters(), lr = learning_rate,weight_decay = 1e-6)
     
     return(loss, optimizer)
 
@@ -238,6 +243,7 @@ def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1):
             outputs     = net(inputs.permute(0,3,1,2))
             # compute the losses
             loss_batch  = loss_func(outputs,inputs.permute(0,3,1,2),)
+            loss_batch += 10 * torch.norm(outputs,1)
             # backpropagation
             loss_batch.backward()
             # modify the weights
@@ -275,7 +281,7 @@ if __name__ == '__main__':
     saving_name     = '../results/simple_autoencoder2D.pth'
     
     batch_size      = 10
-    lr              = 1e-3
+    lr              = 1e-1
     n_epochs        = 200
     print('set up random seeds')
     torch.manual_seed(12345)
