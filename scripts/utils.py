@@ -449,18 +449,12 @@ def create_fsl_FEAT_workflow_func(whichrun          = 0,
     for directories in [output_dir,MC_dir]:
         if not os.path.exists(directories):
             os.makedirs(directories)
-    
-    # initialize all the output files
     if first_run == True:
-        preproc.inputs.extractref.roi_file      = os.path.abspath(os.path.join(
-                output_dir,'example_func.nii.gz'))
-    
-    preproc.inputs.dilatemask.out_file          = os.path.abspath(os.path.join(
-                output_dir,'mask.nii.gz'))
-    preproc.inputs.meanscale.out_file           = os.path.abspath(os.path.join(
-                output_dir,'prefiltered_func.nii.gz'))
-    preproc.inputs.gen_mean_func_img.out_file   = os.path.abspath(os.path.join(
-                output_dir,'mean_func.nii.gz'))
+        preproc.inputs.extractref.roi_file =\
+                 os.path.abspath(os.path.join(
+                             output_dir,
+                             'example_func.nii.gz'))
+
     
     return preproc,MC_dir,output_dir
 
