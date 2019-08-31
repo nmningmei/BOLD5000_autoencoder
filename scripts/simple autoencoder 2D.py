@@ -104,22 +104,26 @@ class encoder2D(nn.Module):
         self.norm128 = nn.BatchNorm2d(num_features   = 128)
         self.norm256 = nn.BatchNorm2d(num_features   = 256)
         self.norm512 = nn.BatchNorm2d(num_features   = 512)
+        self.dropout = nn.Dropout2d(p = 0.5)
         
     def forward(self,x):
         out1 = self.norm128(self.conv2d_66_128(x))
         out1 = self.activation(out1)
+        out1 = self.dropout(out1)
         out1 = self.norm128(self.conv2d_128_128(out1))
         out1 = self.activation(out1)
         out1 = self.pooling(out1)
         
         out2 = self.norm256(self.conv2d_128_256(out1))
         out2 = self.activation(out2)
+        out2 = self.dropout(out2)
         out2 = self.norm256(self.conv2d_256_256(out2))
         out2 = self.activation(out2)
         out2 = self.pooling(out2)
         
         out3 = self.norm512(self.conv2d_256_512(out2))
         out3 = self.activation(out3)
+        out3 = self.dropout(out3)
         out3 = self.norm512(self.conv2d_512_512(out3))
         out3 = self.output_activation(out3)
         out3 = self.pooling(out3)
@@ -223,10 +227,10 @@ class decoder2D(nn.Module):
 def createLossAndOptimizer(net, learning_rate=0.001):
     
     #Loss function
-    loss        = nn.L1Loss()
+    loss        = nn.SmoothL1Loss()
     
     #Optimizer
-    optimizer   = optim.Adam(net.parameters(), lr = learning_rate,weight_decay = 1e-6)
+    optimizer   = optim.Adam(net.parameters(), lr = learning_rate,weight_decay = 1e-9)
     
     return(loss, optimizer)
 
@@ -245,9 +249,9 @@ def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1):
             outputs     = net(inputs.permute(0,3,1,2))
             # compute the losses
             loss_batch  = loss_func(outputs,inputs.permute(0,3,1,2),)
-            loss_batch += 1 * torch.norm(outputs,1)
+            loss_batch += 0.01 * torch.norm(outputs,1)
             selected_params = torch.cat([x.view(-1) for x in net.parameters()])
-            loss_batch += 0.01 * torch.norm(selected_params,2)
+            loss_batch += 0.01 * torch.norm(selected_params,1)
             # backpropagation
             loss_batch.backward()
             # modify the weights
@@ -285,8 +289,8 @@ if __name__ == '__main__':
     print()
     saving_name     = '../results/simple_autoencoder2D.pth'
     
-    batch_size      = 10
-    lr              = 1e-1
+    batch_size      = 16
+    lr              = 1e-5
     n_epochs        = 200
     print('set up random seeds')
     torch.manual_seed(12345)
@@ -299,8 +303,8 @@ if __name__ == '__main__':
     dataloader_train = DataLoader(train_dataset, batch_size = batch_size, shuffle=True, num_workers=2)
     dataloader_valid = DataLoader(valid_dataset, batch_size = batch_size, shuffle=False,num_workers=2)
     print('set up autoencoder')
-    encoder = encoder2D()
-    decoder = decoder2D()
+    encoder = encoder2D(batch_size = batch_size)
+    decoder = decoder2D(batch_size = batch_size)
     autoencoder     = nn.Sequential(OrderedDict(
             [('encoder',encoder),
              ('decoder',decoder),
@@ -330,9 +334,13 @@ if __name__ == '__main__':
         train_loss          = train_loop(autoencoder,loss_func,optimizer,dataloader_train,device,stp,idx_epoch)
         # validation
         if idx_epoch > 0:
-            encoder = encoder2D()
-            decoder = decoder2D()
-            autoencoder     = nn.Sequential(*[encoder,decoder]).to(device)
+            encoder = encoder2D(batch_size = batch_size)
+            decoder = decoder2D(batch_size = batch_size)
+            autoencoder     = nn.Sequential(OrderedDict(
+                    [('encoder',encoder),
+                     ('decoder',decoder),
+                            ]
+                    )).to(device)
 #            if not torch.cuda.is_available():
 #                autoencoder     = torch.nn.parallel.DistributedDataParallel(autoencoder)
             autoencoder.load_state_dict(torch.load(saving_name))
