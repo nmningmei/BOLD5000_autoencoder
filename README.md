@@ -20,7 +20,7 @@ autoencoder trained on BOLD5000 dataset
 # Check List:
 - [x] download and preprocess the BOLD5000 dataset
 - [x] get relevant volumes from the preprocessed data
-- [ ] train a simple autoencoder with the data
+- [x] train a simple autoencoder with the data
 - [ ] train a variational autoencoder with the data
 - [ ] train a convolutional neural network using the pretrained simple autoencoder with the BOLD data and images
 - [ ] examine the generalizability of the simple/variational autoencoder to a new fMRI dataset, using the autoencoder as a "feature extractor"
@@ -143,10 +143,19 @@ resampled.to_filename(picked_data.replace('filtered.nii.gz',
 ```
 ## step 1.5.get relevant volumes
 ![fmri-protocol](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/fMRI%20protocol.jpg)
+According to the figure shown above, we don't have to use all the MRI volumes but a small subset of them because not all of them are related to the images showed to the subjects. Here, we pick those volumes 4 - 8 seconds after the onset of the image at each trial. 
 
 # Step 2 Autoencoder Modeling
 ## step 2.1.Simple Autoencoder - compression, reconstruction
 ![simple-autoencoder](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%201.jpg)
+
+- batch size: 16
+- initial learning rate: 1e-2, decreased by 5 after every 4 epochs
+- maximum epochs: 200
+- training size: 44320
+- validation size: 11080
+- best validation loss: 0.08 (MSE)
+
 ## step 2.2.Variational Autoencoder - variantional inference, reconstruction
 
 <img align="center" width="100" height="100" src="https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/vae_model.png">
