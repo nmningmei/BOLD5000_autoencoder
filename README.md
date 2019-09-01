@@ -154,7 +154,7 @@ According to the figure shown above, we don't have to use all the MRI volumes bu
 - maximum epochs: 200
 - training size: 44320
 - validation size: 11080
-- best validation loss: 0.08 (MSE)
+- best validation loss: 0.008989973 (MSE)
 
 ## step 2.2.Variational Autoencoder - variantional inference, reconstruction
 
