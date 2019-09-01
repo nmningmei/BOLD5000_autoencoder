@@ -240,11 +240,11 @@ def createLossAndOptimizer(net, learning_rate=0.001):
     loss        = nn.SmoothL1Loss()
     
     #Optimizer
-    optimizer   = optim.Adam(net.parameters(), lr = learning_rate,weight_decay = 1e-6)
+    optimizer   = optim.Adam(net.parameters(), lr = learning_rate,weight_decay = 1e-19)
     
     return(loss, optimizer)
 
-def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1):
+def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1,epsilon = 1e-9):
     """
     A for-loop of train the autoencoder for 1 epoch
     """
@@ -259,9 +259,9 @@ def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1):
             outputs     = net(inputs.permute(0,3,1,2))
             # compute the losses
             loss_batch  = loss_func(outputs,inputs.permute(0,3,1,2),) # prediction loss
-            loss_batch += 0.001 * torch.norm(outputs,1) # L1 prediction penalty
+            loss_batch += 0.001 * torch.norm(outputs,1) + epsilon # L1 prediction penalty
             selected_params = torch.cat([x.view(-1) for x in net.parameters()]) # L2 penalty on parameters
-            loss_batch += 0.001 * (0.5 * torch.norm(selected_params,1) + 0.5 * torch.norm(selected_params,2))
+            loss_batch += 0.001 * (0.5 * torch.norm(selected_params,1) + 0.5 * torch.norm(selected_params,2) + epsilon)
             # backpropagation
             loss_batch.backward()
             # modify the weights
@@ -340,7 +340,7 @@ if __name__ == '__main__':
 #        autoencoder     = torch.nn.parallel.DistributedDataParallel(autoencoder)
     loss_func,optimizer = createLossAndOptimizer(autoencoder,learning_rate = lr)
     for idx_epoch in range(n_epochs):
-        if (idx_epoch > 0) and (idx_epoch % 4  == 0):
+        if (idx_epoch > 0) and (idx_epoch % 2  == 0):
             lr /= 5
             loss_func,optimizer = createLossAndOptimizer(autoencoder,learning_rate = lr)
         # train
@@ -364,8 +364,8 @@ if __name__ == '__main__':
     
         print(f'epoch {idx_epoch + stp}, validation loss = {valid_loss:.6f}')
         print('determine early stop')
-        if torch.tensor(valid_loss.cpu(),dtype=torch.float64) < best_valid_loss:
-            best_valid_loss = torch.tensor(valid_loss.cpu().clone().detach(),dtype=torch.float64)
+        if valid_loss.cpu().clone().detach().type(torch.float64) < best_valid_loss:
+            best_valid_loss = valid_loss.cpu().clone().detach().type(torch.float64)
             torch.save(autoencoder.state_dict(),saving_name)
             print('saving model')
         results['train_loss'].append(train_loss.detach().cpu().numpy())
