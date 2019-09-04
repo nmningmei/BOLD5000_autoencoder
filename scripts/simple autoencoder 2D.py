@@ -14,39 +14,45 @@ from glob import glob
 from tqdm import tqdm
 from torch.utils.data import Dataset
 from nibabel import load as load_fmri
-from scipy.stats import scoreatpercentile
 
 import torch
 from torch import nn,no_grad
-from torch.nn import functional
 from torch import optim
 from torch.autograd import Variable
 
 class customizedDataset(Dataset):
     def __init__(self,data_root):
         self.samples = []
-        
         for item in glob(os.path.join(data_root,'*.nii.gz')):
             self.samples.append(item)
+    
     def __len__(self):
         return len(self.samples)
-
-    def __getitem__(self, idx):
+    
+    def __getitem__(self, idx):# for each item in the sample
+        """
+        Because we will use binary cross entropy loss function, 
+        it is crutial that we make sure the data range between 0 and 1
+        """
+        # load the nii.gz format data
         temp = load_fmri(self.samples[idx]).get_data()
-#        temp[temp < scoreatpercentile(temp.flatten(),2)] = 0
+        # get the maximum of the volume
         max_weight = temp.max()
-        temp = temp / max_weight
-        min_weight = np.abs(temp.min())
-        temp = temp + min_weight
-        return temp,max_weight,min_weight
+        # ge the minmum of the volume
+        min_weight = temp.min()
+        # standardize
+        temp_std = (temp - min_weight) / (max_weight - min_weight)
+        temp_scaled = temp_std * (1 - 0) + 0
+        return temp_scaled,max_weight,min_weight
 
 class encoder2D(nn.Module):
+    import numpy as np
     def __init__(self,
                  batch_size         = 10,
-                 in_channels        = [66, 128,256,512,1028,2056,2000],
-                 out_channels       = [128,256,512,1028,2056,2000],
-                 kernel_size        = 3,
-                 stride             = 2,
+                 in_channels        = np.concatenate([[66],np.linspace(100,100 + 10 * 50,11)]).astype(int),
+                 out_channels       = np.linspace(100,100 + 11 * 50,12).astype(int),
+                 kernel_size        = 12,
+                 stride             = 1,
                  padding_mode       = 'valid',
                  pool_kernal_size   = 1,
                  ):
@@ -66,19 +72,7 @@ class encoder2D(nn.Module):
                                     stride         = self.stride,
                                     padding_mode   = self.padding_mode,
                                     )
-        self.conv2d_1_1 = nn.Conv2d(in_channels    = self.in_channels[1],
-                                    out_channels   = self.out_channels[0],
-                                    kernel_size    = self.kernel_size,
-                                    stride         = self.stride,
-                                    padding_mode   = self.padding_mode,
-                                    )
         self.conv2d_1_2 = nn.Conv2d(in_channels    = self.in_channels[1],
-                                    out_channels   = self.out_channels[1],
-                                    kernel_size    = self.kernel_size,
-                                    stride         = self.stride,
-                                    padding_mode   = self.padding_mode,
-                                    )
-        self.conv2d_2_2 = nn.Conv2d(in_channels    = self.in_channels[2],
                                     out_channels   = self.out_channels[1],
                                     kernel_size    = self.kernel_size,
                                     stride         = self.stride,
@@ -90,19 +84,7 @@ class encoder2D(nn.Module):
                                     stride         = self.stride,
                                     padding_mode   = self.padding_mode,
                                     )
-        self.conv2d_3_3 = nn.Conv2d(in_channels    = self.in_channels[3],
-                                    out_channels   = self.out_channels[2],
-                                    kernel_size    = self.kernel_size,
-                                    stride         = self.stride,
-                                    padding_mode   = self.padding_mode,
-                                    )
         self.conv2d_3_4 = nn.Conv2d(in_channels    = self.in_channels[3],
-                                    out_channels   = self.out_channels[3],
-                                    kernel_size    = self.kernel_size,
-                                    stride         = self.stride,
-                                    padding_mode   = self.padding_mode,
-                                    )
-        self.conv2d_4_4 = nn.Conv2d(in_channels    = self.in_channels[4],
                                     out_channels   = self.out_channels[3],
                                     kernel_size    = self.kernel_size,
                                     stride         = self.stride,
@@ -114,55 +96,90 @@ class encoder2D(nn.Module):
                                     stride         = self.stride,
                                     padding_mode   = self.padding_mode,
                                     )
-        self.conv2d_5_5 = nn.Conv2d(in_channels    = self.in_channels[5],
-                                    out_channels   = self.out_channels[4],
+        self.conv2d_5_6 = nn.Conv2d(in_channels    = self.in_channels[5],
+                                    out_channels   = self.out_channels[5],
+                                    kernel_size    = self.kernel_size,
+                                    stride         = self.stride,
+                                    padding_mode   = self.padding_mode,
+                                    )
+        self.conv2d_6_7 = nn.Conv2d(in_channels    = self.in_channels[6],
+                                    out_channels   = self.out_channels[6],
+                                    kernel_size    = self.kernel_size,
+                                    stride         = self.stride,
+                                    padding_mode   = self.padding_mode,
+                                    )
+        self.conv2d_7_8 = nn.Conv2d(in_channels    = self.in_channels[7],
+                                    out_channels   = self.out_channels[7],
+                                    kernel_size    = self.kernel_size,
+                                    stride         = self.stride,
+                                    padding_mode   = self.padding_mode,
+                                    )
+        self.conv2d_8_9 = nn.Conv2d(in_channels    = self.in_channels[8],
+                                    out_channels   = self.out_channels[8],
+                                    kernel_size    = self.kernel_size,
+                                    stride         = self.stride,
+                                    padding_mode   = self.padding_mode,
+                                    )
+        self.conv2d_9_10= nn.Conv2d(in_channels    = self.in_channels[9],
+                                    out_channels   = self.out_channels[9],
                                     kernel_size    = self.kernel_size,
                                     stride         = self.stride,
                                     padding_mode   = self.padding_mode,
                                     )
         
-        self.activation = nn.CELU(inplace      = True)
-        self.output_activation = nn.ELU()
-        self.pooling = nn.AvgPool2d(kernel_size         = self.pool_kernal_size,
-                                    stride              = 1,
-                                    count_include_pad   = False
-                                    )
-        self.output_pooling = nn.AdaptiveAvgPool2d(output_size = (1,1))
+        self.activation         = nn.CELU(inplace      = True)
+        self.output_activation  = nn.ELU()
+        self.pooling            = nn.MaxPool2d(kernel_size         = self.pool_kernal_size,
+                                               stride              = 1,
+#                                               count_include_pad   = False
+                                               )
+        self.output_pooling     = nn.AdaptiveAvgPool2d(output_size = (1,1))
         self.norm1 = nn.BatchNorm2d(num_features    = out_channels[0])
         self.norm2 = nn.BatchNorm2d(num_features    = out_channels[1])
         self.norm3 = nn.BatchNorm2d(num_features    = out_channels[2])
         self.norm4 = nn.BatchNorm2d(num_features    = out_channels[3])
         self.norm5 = nn.BatchNorm2d(num_features    = out_channels[4])
+        self.norm6 = nn.BatchNorm2d(num_features    = out_channels[5])
+        self.norm7 = nn.BatchNorm2d(num_features    = out_channels[6])
+        self.norm8 = nn.BatchNorm2d(num_features    = out_channels[7])
         self.dropout = nn.Dropout2d(p = 0.1)
         
     def forward(self,x):
-        out1 = self.norm1(self.conv2d_0_1(x))
+        out1 = self.norm1(self.pooling(self.conv2d_0_1(x)))
         out1 = self.activation(out1)
         out1 = self.dropout(out1)
-        out2 = self.norm1(self.conv2d_1_1(out1))
-        out2 = self.activation(out2)
-        out2 = self.pooling(out2)
         
-        out3 = self.norm2(self.conv2d_1_2(out2))
+        out2 = self.norm2(self.pooling(self.conv2d_1_2(out1)))
+        out2 = self.activation(out2)
+        out2 = self.dropout(out2)
+        
+        out3 = self.norm3(self.pooling(self.conv2d_2_3(out2)))
         out3 = self.activation(out3)
         out3 = self.dropout(out3)
-        out4 = self.norm2(self.conv2d_2_2(out3))
+        
+        out4 = self.norm4(self.pooling(self.conv2d_3_4(out3)))
         out4 = self.activation(out4)
-        out4 = self.pooling(out4)
+        out4 = self.dropout(out4)
         
-        out5 = self.norm3(self.conv2d_2_3(out4))
-        out5 = self.output_activation(out5)
+        out5 = self.norm5(self.pooling(self.conv2d_4_5(out4)))
+        out5 = self.activation(out5)
+        out5 = self.dropout(out5)
         
-        flatten = torch.squeeze(out5)
+        out6 = self.norm6(self.pooling(self.conv2d_5_6(out5)))
+        out6 = self.activation(out6)
+        out6 = self.dropout(out6)
         
-        return flatten
+        out7 = self.norm7(self.output_pooling(self.conv2d_6_7(out6)))
+        out7 = self.output_activation(out7)
+        
+        return out7
 class decoder2D(nn.Module):
     def __init__(self,
                  batch_size     = 10,
-                 in_channels    = [512,256,128,128,66],
-                 out_channels   = [512,256,128,128,66],
-                 kernel_size    = 7,
-                 stride         = 2,
+                 in_channels    = list(reversed([66, 150, 200, 250, 300, 350, 400])),
+                 out_channels   = list(reversed([66, 150, 200, 250, 300, 350, 400])),
+                 kernel_size    = 14,
+                 stride         = 1,
                  padding_mode   = 'zeros',):
         super(decoder2D, self).__init__()
         
@@ -185,35 +202,42 @@ class decoder2D(nn.Module):
                                                  stride         = self.stride,
                                                  padding_mode   = self.padding_mode,)
         
-        self.convT2d_2_3    = nn.ConvTranspose2d(in_channels     = self.in_channels[2],
+        self.convT2d_2_3    = nn.ConvTranspose2d(in_channels    = self.in_channels[2],
                                                  out_channels   = self.out_channels[3],
                                                  kernel_size    = self.kernel_size,
                                                  stride         = self.stride,
                                                  padding_mode   = self.padding_mode,)
-        self.convT2d_3_4    = nn.ConvTranspose2d(in_channels     = self.in_channels[3],
+        self.convT2d_3_4    = nn.ConvTranspose2d(in_channels    = self.in_channels[3],
                                                  out_channels   = self.out_channels[4],
                                                  kernel_size    = self.kernel_size,
                                                  stride         = self.stride,
                                                  padding_mode   = self.padding_mode,)
-        self.convT2d_4_5    = nn.Conv2d(in_channels    = self.in_channels[4],
-                                        out_channels   = self.out_channels[4],
-                                        kernel_size    = 4,
-                                        stride         = 1, 
-                                        padding_mode   = 'zeros')
+        self.convT2d_4_5    = nn.ConvTranspose2d(in_channels    = self.in_channels[4],
+                                                 out_channels   = self.out_channels[5],
+                                                 kernel_size    = self.kernel_size,
+                                                 stride         = self.stride,
+                                                 padding_mode   = self.padding_mode,)
+        self.convT2d_5_6    = nn.ConvTranspose2d(in_channels    = self.in_channels[5],
+                                                 out_channels   = self.out_channels[6],
+                                                 kernel_size    = self.kernel_size,
+                                                 stride         = self.stride,
+                                                 padding_mode   = self.padding_mode,)
         
         self.activation         = nn.CELU(inplace              = True)
         self.output_activation  = nn.Sigmoid()
-        self.norm0                = nn.BatchNorm2d(num_features   = out_channels[0])
-        self.norm1                = nn.BatchNorm2d(num_features   = out_channels[1])
-        self.norm2                = nn.BatchNorm2d(num_features   = out_channels[2])
-        self.norm3                = nn.BatchNorm2d(num_features   = out_channels[3])
-        self.norm4                = nn.BatchNorm2d(num_features   = out_channels[4])
-        self.dropout = nn.Dropout2d(p = 0.1)
+        self.norm0              = nn.BatchNorm2d(num_features   = out_channels[0])
+        self.norm1              = nn.BatchNorm2d(num_features   = out_channels[1])
+        self.norm2              = nn.BatchNorm2d(num_features   = out_channels[2])
+        self.norm3              = nn.BatchNorm2d(num_features   = out_channels[3])
+        self.norm4              = nn.BatchNorm2d(num_features   = out_channels[4])
+        self.norm5              = nn.BatchNorm2d(num_features   = out_channels[5])
+        self.norm6              = nn.BatchNorm2d(num_features   = out_channels[6])
+        self.dropout            = nn.Dropout2d(p = 0.1)
         
     def forward(self,x):
-        reshaped = x.view(self.batch_size,self.out_channels[0],1,1)
+#        reshaped = x.view(self.batch_size,self.out_channels[0],1,1)
         
-        out1 = self.norm1(self.convT2d_0_1(reshaped))
+        out1 = self.norm1(self.convT2d_0_1(x))
         out1 = self.activation(out1)
         out1 = self.dropout(out1)
         
@@ -227,12 +251,17 @@ class decoder2D(nn.Module):
         
         out4 = self.norm4(self.convT2d_3_4(out3))
         out4 = self.activation(out4)
+        out4 = self.dropout(out4)
         
-        out5 = self.norm4(self.convT2d_4_5(out4))
-        out5 = self.output_activation(out5)
+        out5 = self.norm5(self.convT2d_4_5(out4))
+        out5 = self.activation(out5)
+        out5 = self.dropout(out5)
         
+        out6 = self.norm6(self.convT2d_5_6(out5))
+        out6 = nn.functional.interpolate(out6,size = (88,88))
+        out6 = self.output_activation(out6)
         
-        return out5
+        return out6
 
 
 def createLossAndOptimizer(net, learning_rate=0.001):
@@ -300,7 +329,7 @@ if __name__ == '__main__':
     print()
     saving_name     = '../results/simple_autoencoder2D.pth'
     
-    batch_size      = 16
+    batch_size      = 4
     lr              = 1e-4 
     n_epochs        = 10
     print('set up random seeds')
@@ -314,7 +343,7 @@ if __name__ == '__main__':
     dataloader_train = DataLoader(train_dataset, batch_size = batch_size, shuffle=True, num_workers=2)
     dataloader_valid = DataLoader(valid_dataset, batch_size = batch_size, shuffle=False,num_workers=2)
     print('set up autoencoder')
-    encoder = encoder2D(batch_size = batch_size)#;out = encoder(next(iter(dataloader_train))[0].permute(0,3,1,2));print(out.shape)#;asdf
+    encoder = encoder2D(batch_size = batch_size)#;out = encoder(next(iter(dataloader_train))[0].permute(0,3,1,2));print(out.shape);#asdf
     decoder = decoder2D(batch_size = batch_size)#;c = decoder(out);print(c.shape);adf
     
     autoencoder     = nn.Sequential(OrderedDict(
