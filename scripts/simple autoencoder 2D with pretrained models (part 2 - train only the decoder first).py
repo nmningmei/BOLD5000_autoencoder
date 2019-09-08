@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Sep  5 10:54:14 2019
-
 @author: nmei
 """
 
@@ -105,8 +104,8 @@ class encoder2D(nn.Module):
 class decoder2D(nn.Module):
     def __init__(self,
                  batch_size     = 10,
-                 in_channels    = list(reversed([66, 70, 80, 160, 320, 640, 1280])),
-                 out_channels   = list(reversed([66, 70, 80, 160, 320, 640, 1280])),
+                 in_channels    = list(reversed([66, 66, 66, 66, 1280])),
+                 out_channels   = list(reversed([66, 66, 66, 66, 1280])),
                  kernel_size    = 14,
                  stride         = 1,
                  padding_mode   = 'zeros',
@@ -143,16 +142,16 @@ class decoder2D(nn.Module):
                                                  kernel_size    = self.kernel_size,
                                                  stride         = self.stride,
                                                  padding_mode   = self.padding_mode,)
-        self.convT2d_4_5    = nn.ConvTranspose2d(in_channels    = self.in_channels[4],
-                                                 out_channels   = self.out_channels[5],
-                                                 kernel_size    = self.kernel_size,
-                                                 stride         = self.stride,
-                                                 padding_mode   = self.padding_mode,)
-        self.convT2d_5_6    = nn.ConvTranspose2d(in_channels    = self.in_channels[5],
-                                                 out_channels   = self.out_channels[6],
-                                                 kernel_size    = self.kernel_size,
-                                                 stride         = self.stride,
-                                                 padding_mode   = self.padding_mode,)
+#        self.convT2d_4_5    = nn.ConvTranspose2d(in_channels    = self.in_channels[4],
+#                                                 out_channels   = self.out_channels[5],
+#                                                 kernel_size    = self.kernel_size,
+#                                                 stride         = self.stride,
+#                                                 padding_mode   = self.padding_mode,)
+#        self.convT2d_5_6    = nn.ConvTranspose2d(in_channels    = self.in_channels[5],
+#                                                 out_channels   = self.out_channels[6],
+#                                                 kernel_size    = self.kernel_size,
+#                                                 stride         = self.stride,
+#                                                 padding_mode   = self.padding_mode,)
         
         self.activation         = nn.CELU(inplace              = True)
         self.output_activation  = nn.Sigmoid()
@@ -161,8 +160,8 @@ class decoder2D(nn.Module):
         self.norm2              = nn.BatchNorm2d(num_features   = out_channels[2])
         self.norm3              = nn.BatchNorm2d(num_features   = out_channels[3])
         self.norm4              = nn.BatchNorm2d(num_features   = out_channels[4])
-        self.norm5              = nn.BatchNorm2d(num_features   = out_channels[5])
-        self.norm6              = nn.BatchNorm2d(num_features   = out_channels[6])
+#        self.norm5              = nn.BatchNorm2d(num_features   = out_channels[5])
+#        self.norm6              = nn.BatchNorm2d(num_features   = out_channels[6])
         self.dropout            = nn.Dropout2d(p = 0.5)
         
     def forward(self,x):
@@ -181,18 +180,20 @@ class decoder2D(nn.Module):
         out3 = self.dropout(out3)
         
         out4 = self.norm4(self.convT2d_3_4(out3))
-        out4 = self.activation(out4)
-        out4 = self.dropout(out4)
+        out4 = nn.functional.interpolate(out4, size = (88,88))
+        out4 = self.output_activation(out4)
+#        out4 = self.activation(out4)
+#        out4 = self.dropout(out4)
+#        
+#        out5 = self.norm5(self.convT2d_4_5(out4))
+#        out5 = self.activation(out5)
+#        out5 = self.dropout(out5)
+#        
+#        out6 = self.norm6(self.convT2d_5_6(out5))
+#        out6 = nn.functional.interpolate(out6,size = (88,88))
+#        out6 = self.output_activation(out6)
         
-        out5 = self.norm5(self.convT2d_4_5(out4))
-        out5 = self.activation(out5)
-        out5 = self.dropout(out5)
-        
-        out6 = self.norm6(self.convT2d_5_6(out5))
-        out6 = nn.functional.interpolate(out6,size = (88,88))
-        out6 = self.output_activation(out6)
-        
-        return out6
+        return out4
 
 def createLossAndOptimizer(net, learning_rate=0.001):
     
@@ -262,8 +263,8 @@ if __name__ == '__main__':
     saving_name     = '../results/decoder2D.pth'
     
     batch_size      = 16
-    lr              = 1e-4 
-    n_epochs        = 100
+    lr              = 1e-3
+    n_epochs        = 10
     print('set up random seeds')
     torch.manual_seed(12345)
     if torch.cuda.is_available():torch.cuda.empty_cache();torch.cuda.manual_seed(12345);
@@ -306,16 +307,16 @@ if __name__ == '__main__':
     loss_func,optimizer     = createLossAndOptimizer(decoder,learning_rate = lr * (0.5 ** (stp - 1)))
     scheduler               = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.5)
     for idx_epoch in range(n_epochs):
+        if idx_epoch > 0:
+            decoder         = decoder2D(batch_size = batch_size,device = device)
+            decoder.load_state_dict(torch.load(saving_name))
+            decoder.eval()
         print('Epoch:', idx_epoch + stp,'LR:', scheduler.get_lr())
         # train
         print('training ...')
         train_loss          = train_loop(decoder,loss_func,optimizer,dataloader_train,device,stp,idx_epoch)
         scheduler.step()
         # validation
-        if idx_epoch > 0:
-            decoder         = decoder2D(batch_size = batch_size,device = device)
-            decoder.load_state_dict(torch.load(saving_name))
-            decoder.eval()
         print('validating ...')
         valid_loss          = validation_loop(decoder,loss_func,dataloader_valid,device,idx_epoch)
     
