@@ -54,7 +54,7 @@ converter.run()
 ## Step 1.1. [MCFLIRT, susan smoothing etc. For details of the pipeline, click here](https://colab.research.google.com/github/nmningmei/preprocessing_pipelines/blob/master/FSL_vs_nipype_fsl_preprocessing.ipynb#scrollTo=QF77EkMJrrrI)
 ![prefmri](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/preprocessing_step_1.png)
 
-## Step 1.2. [ICA AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991) [denoising](https://github.com/maartenmennes/ICA-AROMA) - you have to download the GitHub repository to go with the data. - nipype, fsl, and ICA AROMA github repo needed
+## Step 1.2. [ICA AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991) and [denoising](https://github.com/maartenmennes/ICA-AROMA) - you have to download the GitHub repository to go with the data (nipype, fsl, and ICA AROMA github repo needed)
 ```
 from nipype.interfaces.fsl import ICA_AROMA
 # get the subject name
@@ -62,7 +62,7 @@ sub_name = np.unique(re.findall(r'CSI\d',picked_data))[0]
 # get the session and run
 n_session = np.unique(re.findall(r'Sess-\d+',picked_data))[0]
 n_run = np.unique(re.findall(r'Run-\d+',picked_data))[0]
-# get the file of the first run of the first session. Why? Because ICA AROMA takes strutural preprocessed files and structural scans are only processed when the first run of the first session is processed. 
+# get the file of the first run of the first session. Why? Because ICA AROMA takes the structural files and structural scans are only processed when the first run of the first session is processed. 
 run1 = 'Run-1_'
 session1 = 'Sess-1_'
 first_run = os.path.abspath([item for item in glob(os.path.join(data_dir,
@@ -99,7 +99,7 @@ preprocessed_fmri   = glob(os.path.join('/'.join(picked_data.split('/')[:-1]),
                                         'outputs',
                                         'func',
                                         'prefiltered_func.nii.gz'))[0]
-# put the inputs to corresponding argument placeholders
+# inputs to the corresponding argument placeholders
 AROMA_obj           = ICA_AROMA()
 AROMA_obj.inputs.in_file            = os.path.abspath(preprocessed_fmri)
 AROMA_obj.inputs.mat_file           = os.path.abspath(func_to_struct)
@@ -108,17 +108,19 @@ AROMA_obj.inputs.motion_parameters  = os.path.abspath(fsl_mcflirt_movpar)
 AROMA_obj.inputs.mask               = os.path.abspath(mask)
 AROMA_obj.inputs.denoise_type       = 'nonaggr'
 AROMA_obj.inputs.out_dir            = os.path.abspath(output_dir)
-# with "-ow" is to overwrite the old results
+# with "-ow" you can overwrite the old results
 cmdline             = 'python ../ICA_AROMA/' + AROMA_obj.cmdline + ' -ow'
 # run the graph we set up above
 os.system(cmdline)
 ```
-## step 1.3.register functional scans to structural scans - nipype, fsl, and freesurfer needed
+
+## Step 1.3. Register functional scans to structural scans (nipype, fsl, and freesurfer needed)
 ![reg](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/registrate%20funtional%20scans%20to%20sctural%20scans.png)
-## step 1.4.high pass filter at 60 Hz - nipype and fsl are needed
+
+## Step 1.4. High pass filter at 60 Hz (nipype and fsl are needed)
 ![hpf](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/highpass_temp.png)
 
-## step 1.4.reshape the volumes into 88 x 88 x 66 with larger voxel size.
+## Step 1.5. Reshape the volumes into 88 x 88 x 66 with larger voxel sizes
 ```
 from nipype.interfaces import afni
 from nilearn.image import resample_img
@@ -148,12 +150,14 @@ resampled = resample_img(resample3d.inputs.out_file,
 resampled.to_filename(picked_data.replace('filtered.nii.gz',
                                           'filtered_reshaped.nii.gz'))
 ```
-## step 1.5.get relevant volumes
-![fmri-protocol](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/fMRI%20protocol.jpg)
-According to the figure shown above, we don't have to use all the MRI volumes but a small subset of them because not all of them are related to the images showed to the subjects. Here, we pick those volumes 4 - 8 seconds after the onset of the image at each trial. 
 
-# Step 2 Autoencoder Modeling
-## step 2.1.Simple Autoencoder - compression, reconstruction
+## Step 1.6. Get relevant volumes
+![fmri-protocol](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/fMRI%20protocol.jpg)
+According to the figure shown above, we don't have to use all the MRI volumes but a small subset of them because not all of them are related to the images shown to the subjects. Here we pick those volumes 4 - 8 seconds after the onset of the image at each trial. 
+
+# Step 2. Autoencoder modeling
+
+## Step 2.1. Simple autoencoder - compression and reconstruction
 ![simple-autoencoder](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%201.jpg)
 
 - batch size: 16
@@ -163,14 +167,14 @@ According to the figure shown above, we don't have to use all the MRI volumes bu
 - validation size: 11080
 - best validation loss: 0.008989973 (MSE)
 
-## step 2.2.Variational Autoencoder - variantional inference, reconstruction
-
+## Step 2.2. Variational autoencoder - variational inference and reconstruction
 <img align="center" width="100" height="100" src="https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/vae_model.png">
-
 [source: pyro documentation](http://pyro.ai/examples/vae.html#Variational-Autoencoders)
 
 ![vae](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%202.jpg)
-## step 2.3.generalization to a different experiment - cross experiment generalization (test data is available upon requiest)
+
+## Step 2.3. Generalization to a different experiment - cross experiment generalization (test data is available upon request)
 ![generalize](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%203.jpg)
-## step 2.4.train a convolutional neural network, outputs the same latent representation - approximation of an image-to-BOLD mapper (aka, the brain)
+
+## Step 2.4. Train a convolutional neural network which outputs the same latent representation - which is an approximation of an image-to-BOLD mapper (what the brain does)
 ![mapper](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/autoencoder%20phase%204.jpg)
