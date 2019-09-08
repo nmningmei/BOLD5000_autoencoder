@@ -104,8 +104,8 @@ class encoder2D(nn.Module):
 class decoder2D(nn.Module):
     def __init__(self,
                  batch_size     = 10,
-                 in_channels    = list(reversed([66, 66, 66, 66, 1280])),
-                 out_channels   = list(reversed([66, 66, 66, 66, 1280])),
+                 in_channels    = list(reversed([66, 66, 66, 66,66,66, 1280])),
+                 out_channels   = list(reversed([66, 66, 66, 66,66,66, 1280])),
                  kernel_size    = 14,
                  stride         = 1,
                  padding_mode   = 'zeros',
@@ -142,16 +142,16 @@ class decoder2D(nn.Module):
                                                  kernel_size    = self.kernel_size,
                                                  stride         = self.stride,
                                                  padding_mode   = self.padding_mode,)
-#        self.convT2d_4_5    = nn.ConvTranspose2d(in_channels    = self.in_channels[4],
-#                                                 out_channels   = self.out_channels[5],
-#                                                 kernel_size    = self.kernel_size,
-#                                                 stride         = self.stride,
-#                                                 padding_mode   = self.padding_mode,)
-#        self.convT2d_5_6    = nn.ConvTranspose2d(in_channels    = self.in_channels[5],
-#                                                 out_channels   = self.out_channels[6],
-#                                                 kernel_size    = self.kernel_size,
-#                                                 stride         = self.stride,
-#                                                 padding_mode   = self.padding_mode,)
+        self.convT2d_4_5    = nn.ConvTranspose2d(in_channels    = self.in_channels[4],
+                                                 out_channels   = self.out_channels[5],
+                                                 kernel_size    = self.kernel_size,
+                                                 stride         = self.stride,
+                                                 padding_mode   = self.padding_mode,)
+        self.convT2d_5_6    = nn.ConvTranspose2d(in_channels    = self.in_channels[5],
+                                                 out_channels   = self.out_channels[6],
+                                                 kernel_size    = self.kernel_size,
+                                                 stride         = self.stride,
+                                                 padding_mode   = self.padding_mode,)
         
         self.activation         = nn.CELU(inplace              = True)
         self.output_activation  = nn.Sigmoid()
@@ -160,8 +160,8 @@ class decoder2D(nn.Module):
         self.norm2              = nn.BatchNorm2d(num_features   = out_channels[2])
         self.norm3              = nn.BatchNorm2d(num_features   = out_channels[3])
         self.norm4              = nn.BatchNorm2d(num_features   = out_channels[4])
-#        self.norm5              = nn.BatchNorm2d(num_features   = out_channels[5])
-#        self.norm6              = nn.BatchNorm2d(num_features   = out_channels[6])
+        self.norm5              = nn.BatchNorm2d(num_features   = out_channels[5])
+        self.norm6              = nn.BatchNorm2d(num_features   = out_channels[6])
         self.dropout            = nn.Dropout2d(p = 0.5)
         
     def forward(self,x):
@@ -180,20 +180,20 @@ class decoder2D(nn.Module):
         out3 = self.dropout(out3)
         
         out4 = self.norm4(self.convT2d_3_4(out3))
-        out4 = nn.functional.interpolate(out4, size = (88,88))
-        out4 = self.output_activation(out4)
-#        out4 = self.activation(out4)
-#        out4 = self.dropout(out4)
-#        
-#        out5 = self.norm5(self.convT2d_4_5(out4))
-#        out5 = self.activation(out5)
-#        out5 = self.dropout(out5)
-#        
-#        out6 = self.norm6(self.convT2d_5_6(out5))
-#        out6 = nn.functional.interpolate(out6,size = (88,88))
-#        out6 = self.output_activation(out6)
+#        out4 = nn.functional.interpolate(out4, size = (88,88))
+#        out4 = self.output_activation(out4)
+        out4 = self.activation(out4)
+        out4 = self.dropout(out4)
         
-        return out4
+        out5 = self.norm5(self.convT2d_4_5(out4))
+        out5 = self.activation(out5)
+        out5 = self.dropout(out5)
+        
+        out6 = self.norm6(self.convT2d_5_6(out5))
+        out6 = nn.functional.interpolate(out6,size = (88,88))
+        out6 = self.output_activation(out6)
+        
+        return out6
 
 def createLossAndOptimizer(net, learning_rate=0.001):
     

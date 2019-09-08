@@ -82,7 +82,8 @@ class encoder2D(nn.Module):
         self.batch_size = batch_size
         self.adaptive_pooling = nn.AdaptiveAvgPool2d((1,1))
         self.device = device
-    
+        self.linear = nn.Linear(1280,128)
+        self.output_activation = nn.SELU()
     def forward(self,x):
         import numpy as np
         iterator = np.arange(66).reshape(-1,3)
@@ -96,12 +97,16 @@ class encoder2D(nn.Module):
             temp_out = pretrained(x_sliced)
             temp_out = torch.squeeze(self.adaptive_pooling(temp_out))
             preallocator[:,ii] = temp_out
-        return preallocator
+        
+        output = self.output_activation(self.linear(preallocator.mean(1).to(device)))
+        
+        return output
+
 class decoder2D(nn.Module):
     def __init__(self,
                  batch_size     = 10,
-                 in_channels    = list(reversed([66, 70, 80, 160, 320, 640, 1280])),
-                 out_channels   = list(reversed([66, 70, 80, 160, 320, 640, 1280])),
+                 in_channels    = list(reversed([66, 66, 66, 66,66,66, 128])),
+                 out_channels   = list(reversed([66, 66, 66, 66,66,66, 128])),
                  kernel_size    = 14,
                  stride         = 1,
                  padding_mode   = 'zeros',
@@ -158,10 +163,10 @@ class decoder2D(nn.Module):
         self.norm4              = nn.BatchNorm2d(num_features   = out_channels[4])
         self.norm5              = nn.BatchNorm2d(num_features   = out_channels[5])
         self.norm6              = nn.BatchNorm2d(num_features   = out_channels[6])
-        self.dropout            = nn.Dropout2d(p = 0.1)
+        self.dropout            = nn.Dropout2d(p = 0.5)
         
     def forward(self,x):
-        reshaped = x.mean(1).view(self.batch_size,self.out_channels[0],1,1)
+        reshaped = x.view(self.batch_size,self.out_channels[0],1,1)
         
         out1 = self.norm1(self.convT2d_0_1(reshaped))
         out1 = self.activation(out1)
@@ -176,6 +181,8 @@ class decoder2D(nn.Module):
         out3 = self.dropout(out3)
         
         out4 = self.norm4(self.convT2d_3_4(out3))
+#        out4 = nn.functional.interpolate(out4, size = (88,88))
+#        out4 = self.output_activation(out4)
         out4 = self.activation(out4)
         out4 = self.dropout(out4)
         
@@ -214,9 +221,9 @@ def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1,epsilo
             outputs     = net(inputs.permute(0,3,1,2))
             # compute the losses
             loss_batch  = loss_func(outputs,inputs.permute(0,3,1,2),) # prediction loss
-            loss_batch += 0.001 * torch.norm(outputs,1) + epsilon # L1 prediction penalty
+#            loss_batch += 0.001 * torch.norm(outputs,1) + epsilon # L1 prediction penalty
             selected_params = torch.cat([x.view(-1) for x in net.parameters()]) # L2 penalty on parameters
-            loss_batch += 0.001 * (0.5 * torch.norm(selected_params,1) + 0.5 * torch.norm(selected_params,2) + epsilon)
+            loss_batch += 0.01 * (0.5 * torch.norm(selected_params,1) + 0.5 * torch.norm(selected_params,2) + epsilon)
             # backpropagation
             loss_batch.backward()
             # modify the weights
@@ -252,15 +259,15 @@ if __name__ == '__main__':
     import numpy as np
     import pandas as pd
     print()
-    saving_name     = '../results/simple_autoencoder2D_pretrain.pth'
+    saving_name     = '../results/autoencoder_2D.pth'
     
-    batch_size      = 4
+    batch_size      = 36
     lr              = 1e-4 
     n_epochs        = 10
     print('set up random seeds')
     torch.manual_seed(12345)
     if torch.cuda.is_available():torch.cuda.empty_cache();torch.cuda.manual_seed(12345);
-    device = 'cpu'#torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'device:{device}')
     print('set up data loaders')
     train_dataset   = customizedDataset('../data/train/')
@@ -268,11 +275,11 @@ if __name__ == '__main__':
     dataloader_train = DataLoader(train_dataset, batch_size = batch_size, shuffle=True, num_workers=2)
     dataloader_valid = DataLoader(valid_dataset, batch_size = batch_size, shuffle=False,num_workers=2)
     print('set up autoencoder')
-    encoder = encoder2D(batch_size = batch_size,
-                        device = device)#;out = encoder(next(iter(dataloader_train))[0].permute(0,3,1,2));print(out.shape);#asdf
-    decoder = decoder2D(batch_size = batch_size,
-                        device = device)#;c = decoder(out);print(c.shape);adf
-    
+    encoder = encoder2D(batch_size = batch_size)#;out = encoder(next(iter(dataloader_train))[0].permute(0,3,1,2));print(out.shape);#asdf
+    decoder = decoder2D(batch_size = batch_size)#;c = decoder(out);print(c.shape);adf
+#    decoder.load_state_dict(torch.load(saving_name.replace('encoder','decoder')))
+    for params in decoder.parameters():
+        params.requires_grad = False
     autoencoder     = nn.Sequential(OrderedDict(
             [('encoder',encoder),
              ('decoder',decoder),
@@ -280,8 +287,8 @@ if __name__ == '__main__':
             )).to(device)
     
     if os.path.exists(saving_name.replace(".pth",".csv")):
-        autoencoder.load_state_dict(torch.load(saving_name))
-        autoencoder.eval()
+        encoder.load_state_dict(torch.load(saving_name))
+        encoder.eval()
         results = pd.read_csv(saving_name.replace(".pth",".csv"))
         results = {col_name:list(results[col_name].values) for col_name in results.columns}
         best_valid_loss = torch.tensor(results['valid_loss'][-1],dtype = torch.float64)
@@ -299,23 +306,33 @@ if __name__ == '__main__':
     scheduler   = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.9)
     for idx_epoch in range(n_epochs):
         print('Epoch:', idx_epoch + 1,'LR:', scheduler.get_lr())
-#        lr_ = lr * (1/(idx_epoch + 1))
-#        loss_func,optimizer = createLossAndOptimizer(autoencoder,learning_rate = lr_)
-        # train
-        print('training ...')
-        train_loss          = train_loop(autoencoder,loss_func,optimizer,dataloader_train,device,stp,idx_epoch)
-        scheduler.step()
-        # validation
         if idx_epoch > 0:
-            encoder = encoder2D(batch_size = batch_size,device = device)
-            decoder = decoder2D(batch_size = batch_size,device = device)
+            encoder = encoder2D(batch_size = batch_size)
+            decoder = decoder2D(batch_size = batch_size)
             autoencoder     = nn.Sequential(OrderedDict(
                     [('encoder',encoder),
                      ('decoder',decoder),
                             ]
                     )).to(device)
+#            decoder.load_state_dict(torch.load(saving_name.replace('encoder','decoder')))
             autoencoder.load_state_dict(torch.load(saving_name))
-            autoencoder.eval()
+            encoder.eval()
+        # train
+        print('training ...')
+        if idx_epoch % 2 == 0:
+            for x in autoencoder.encoder.parameters():
+                x.requires_grad = False
+            for x in autoencoder.decoder.parameters():
+                x.requires_grad = True
+        else:
+            for x in autoencoder.encoder.parameters():
+                x.requires_grad = True
+            for x in autoencoder.decoder.parameters():
+                x.requires_grad = False
+        
+        train_loss          = train_loop(autoencoder,loss_func,optimizer,dataloader_train,device,stp,idx_epoch)
+        scheduler.step()
+        # validation
         print('validating ...')
         valid_loss = validation_loop(autoencoder,loss_func,dataloader_valid,device,idx_epoch)
     
@@ -331,3 +348,4 @@ if __name__ == '__main__':
         results['learning_rate'].append(lr)
         results_to_save = pd.DataFrame(results)
         results_to_save.to_csv(saving_name.replace(".pth",".csv"),index = False)
+        del autoencoder
