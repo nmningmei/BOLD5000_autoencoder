@@ -1,5 +1,5 @@
 # BOLD5000_autoencoder
-autoencoder trained on BOLD5000 dataset
+An autoencoder trained on the BOLD5000 dataset
 
 # Inspiration
 
@@ -12,7 +12,8 @@ Even when participants view images of living and non-living objects that they ar
 - FSL 5.0.10
 - Freesurfer 6.0.0 (optional for structural scan processing)
 - AFNI - stable version
-## Python Libraries
+
+# Python Libraries
 - numpy 1.16.1
 - pandas 0.20.3
 - nipype 1.1.9
