@@ -286,34 +286,36 @@ if __name__ == '__main__':
 #             ('decoder',decoder),
 #                    ]
 #            )).to(device)
-    
-    print('initialize')
-    results = dict(
-            train_loss      = [],
-            valid_loss      = [],
-            epochs          = [],
-            learning_rate   = [],)
-    best_valid_loss         = torch.from_numpy(np.array(np.inf))
-    stp                     = 1
-    loss_func,optimizer     = createLossAndOptimizer(decoder,learning_rate = lr)
+    if os.path.exists(saving_name.replace(".pth",".csv")):
+        decoder         = decoder2D(batch_size = batch_size,device = device)
+        decoder.load_state_dict(torch.load(saving_name))
+        decoder.eval()
+        results = pd.read_csv(saving_name.replace('.pth','.csv'))
+        results = {col_name:list(results[col_name].values) for col_name in results.columns}
+        best_valid_loss = torch.tensor(results['valid_loss'][-1],dtype = torch.float64)
+        stp = 1 + len(results['valid_loss'])
+    else:
+        print('initialize')
+        results = dict(
+                train_loss      = [],
+                valid_loss      = [],
+                epochs          = [],
+                learning_rate   = [],)
+        best_valid_loss         = torch.from_numpy(np.array(np.inf))
+        stp                     = 1
+    loss_func,optimizer     = createLossAndOptimizer(decoder,learning_rate = lr * (0.5 ** (stp - 1)))
     scheduler               = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.5)
     for idx_epoch in range(n_epochs):
-        print('Epoch:', idx_epoch + 1,'LR:', scheduler.get_lr())
+        print('Epoch:', idx_epoch + stp,'LR:', scheduler.get_lr())
         # train
         print('training ...')
         train_loss          = train_loop(decoder,loss_func,optimizer,dataloader_train,device,stp,idx_epoch)
         scheduler.step()
         # validation
         if idx_epoch > 0:
-#            encoder = encoder2D(batch_size = batch_size,device = device)
             decoder         = decoder2D(batch_size = batch_size,device = device)
             decoder.load_state_dict(torch.load(saving_name))
             decoder.eval()
-#            autoencoder     = nn.Sequential(OrderedDict(
-#                    [('encoder',encoder),
-#                     ('decoder',decoder),
-#                            ]
-#                    )).to(device)
         print('validating ...')
         valid_loss          = validation_loop(decoder,loss_func,dataloader_valid,device,idx_epoch)
     
@@ -329,3 +331,4 @@ if __name__ == '__main__':
         results['learning_rate'].append(lr)
         results_to_save = pd.DataFrame(results)
         results_to_save.to_csv(saving_name.replace(".pth",".csv"),index = False)
+        del decoder
