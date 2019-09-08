@@ -2,7 +2,6 @@
 An autoencoder trained on the BOLD5000 dataset
 
 # Inspiration
-
 Even when participants view images of living and non-living objects that they are not able to discriminate behaviorally, we are able to classify the correct categories based on the functional magnetic resonance imaging blood-oxygen-level-dependent (fMRI BOLD) responses above chance level. In short, the BOLD response provides more information than behavior in classifying the categories. While significant, the area under the receiver operating characteristic curve (ROC AUC) is low, so we sought to utilize transfer learning \cite {yosinski2014transferable} to improve the performance. Yosinski et al.’s work was based on supervised machine learning, but a system trained with unsupervised machine learning is more generalizable \cite {bengio2012deep}. Thus we trained an autoencoder which is an unsupervised machine learning algorithm that consists of two parts: an encoder and a decoder. An encoder extracts “features” that compresses the input, and then the decoder reconstructs the input based on the extracted “features”.
 
 # Requirements
@@ -22,21 +21,22 @@ Even when participants view images of living and non-living objects that they ar
 - scikit-learning 0.20.3
 - pytorch-cpu 1.2
 
-# Check List:
-- [x] download and preprocess the BOLD5000 dataset
-- [x] get relevant volumes from the preprocessed data
-- [x] train a simple autoencoder with the data
-- [ ] train a variational autoencoder with the data
-- [ ] train a convolutional neural network using the pretrained simple autoencoder with the BOLD data and images
-- [ ] examine the generalizability of the simple/variational autoencoder to a new fMRI dataset, using the autoencoder as a "feature extractor"
+# Checklist:
+- [x] Download and preprocess the BOLD5000 dataset
+- [x] Get relevant volumes from the preprocessed data
+- [x] Train a simple autoencoder with the data
+- [ ] Train a variational autoencoder with the data
+- [ ] Train a convolutional neural network using the pretrained simple autoencoder with the BOLD data and images
+- [ ] Examine the generalizability of the simple/variational autoencoder to a new fMRI dataset, using the autoencoder as a "feature extractor"
 
-# Step 0 [Download Data: BOLD5000](https://bold5000.github.io)
-
-link to download the data: https://figshare.com/articles/BOLD5000/6459449
+# Step 0. Download data
+Link to download the data: https://figshare.com/articles/BOLD5000/6459449
 
 Please note: only "Unfiltered" data were used.
-## step 0.1.unzip
-## step 0.2.convet dcm to nii.gz (nipype, mricrogl and mricon are needed)
+
+## Step 0.1. Unzip
+
+## Step 0.2. Convert dcm to nii.gz (nipype, mricrogl and mricon are needed)
 ```
 from nipype.interfaces.dcm2nii import Dcm2niix
 converter = Dcm2niix()
@@ -49,10 +49,12 @@ print(converter.cmdline)
 converter.run()
 ```
 
-# Step 1.Preprocessing Pipeline - functional scans (nipype, fsl, and freesurfer are needed)
-## step 1.1.[MCFLIRT, susan smoothing etc. Details of the pipeline, click here.](https://colab.research.google.com/github/nmningmei/preprocessing_pipelines/blob/master/FSL_vs_nipype_fsl_preprocessing.ipynb#scrollTo=QF77EkMJrrrI)
+# Step 1. Preprocessing pipeline of the functional scans (nipype, fsl, and freesurfer are needed)
+
+## Step 1.1. [MCFLIRT, susan smoothing etc. For details of the pipeline, click here](https://colab.research.google.com/github/nmningmei/preprocessing_pipelines/blob/master/FSL_vs_nipype_fsl_preprocessing.ipynb#scrollTo=QF77EkMJrrrI)
 ![prefmri](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/preprocessing_step_1.png)
-## step 1.2.[ICA AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991) [denoising](https://github.com/maartenmennes/ICA-AROMA) - you have to download the github repository to go with the data. - nipype, fsl, and ICA AROMA github repo needed
+
+## Step 1.2. [ICA AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991) [denoising](https://github.com/maartenmennes/ICA-AROMA) - you have to download the GitHub repository to go with the data. - nipype, fsl, and ICA AROMA github repo needed
 ```
 from nipype.interfaces.fsl import ICA_AROMA
 # get the subject name
