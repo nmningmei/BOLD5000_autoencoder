@@ -42,7 +42,7 @@ class customizedDataset(Dataset):
         min_weight = target.min()
         # standardize
         target_std = (target - min_weight) / (max_weight - min_weight)
-        target_scaled = target_std * (1 - 0) + 0
+        target_scaled = target_std * (1 - (0)) + (0)
         
         x = np.load(self.samples[idx][0])
         
@@ -163,7 +163,7 @@ class decoder2D(nn.Module):
         self.norm4              = nn.BatchNorm2d(num_features   = out_channels[4])
         self.norm5              = nn.BatchNorm2d(num_features   = out_channels[5])
         self.norm6              = nn.BatchNorm2d(num_features   = out_channels[6])
-        self.dropout            = nn.Dropout2d(p = 0.1)
+        self.dropout            = nn.Dropout2d(p = 0.5)
         
     def forward(self,x):
         reshaped = x.mean(1).view(self.batch_size,self.out_channels[0],1,1)
@@ -217,12 +217,12 @@ def train_loop(net,loss_fuc,optimizer,dataloader,device,stp,idx_epoch = 1,epsilo
             # one of the most important step, reset the gradients
             optimizer.zero_grad()
             # compute the outputs
-            outputs     = net(inputs)
+            outputs     = net.to(device)(inputs)
             # compute the losses
             loss_batch  = loss_func(outputs.permute(0,2,3,1),targets,) # prediction loss
-            loss_batch += 0.001 * torch.norm(outputs,1) + epsilon # L1 prediction penalty
+#            loss_batch += 0.001 * torch.norm(outputs,1) + epsilon # L1 prediction penalty
             selected_params = torch.cat([x.view(-1) for x in net.parameters()]) # L2 penalty on parameters
-            loss_batch += 0.001 * (0.5 * torch.norm(selected_params,1) + 0.5 * torch.norm(selected_params,2) + epsilon)
+            loss_batch += 0.01 * (0.5 * torch.norm(selected_params,1) + 0.5 * torch.norm(selected_params,2) + epsilon)
             # backpropagation
             loss_batch.backward()
             # modify the weights
@@ -242,7 +242,7 @@ def validation_loop(net,loss_func,dataloader,device,idx_epoch = 1):
                 inputs  = Variable(batch).to(device)
                 targets = Variable(targets).to(device)
                 # compute the outputs
-                outputs     = net(inputs)
+                outputs     = net.to(device)(inputs)
                 # compute the losses
                 loss_batch  = loss_func(outputs.permute(0,2,3,1),targets,)
                 # record the validation loss of a mini-batch
@@ -254,7 +254,7 @@ def validation_loop(net,loss_func,dataloader,device,idx_epoch = 1):
 if __name__ == '__main__':
     print('import')
     from torch.utils.data import DataLoader
-    from collections import OrderedDict
+#    from collections import OrderedDict
 #    import torch
     
     import pandas as pd
@@ -294,9 +294,9 @@ if __name__ == '__main__':
             epochs          = [],
             learning_rate   = [],)
     best_valid_loss         = torch.from_numpy(np.array(np.inf))
-    stp = 1
-    loss_func,optimizer = createLossAndOptimizer(decoder,learning_rate = lr)
-    scheduler   = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.5)
+    stp                     = 1
+    loss_func,optimizer     = createLossAndOptimizer(decoder,learning_rate = lr)
+    scheduler               = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.5)
     for idx_epoch in range(n_epochs):
         print('Epoch:', idx_epoch + 1,'LR:', scheduler.get_lr())
         # train
@@ -306,7 +306,7 @@ if __name__ == '__main__':
         # validation
         if idx_epoch > 0:
 #            encoder = encoder2D(batch_size = batch_size,device = device)
-            decoder = decoder2D(batch_size = batch_size,device = device)
+            decoder         = decoder2D(batch_size = batch_size,device = device)
             decoder.load_state_dict(torch.load(saving_name))
             decoder.eval()
 #            autoencoder     = nn.Sequential(OrderedDict(
@@ -315,7 +315,7 @@ if __name__ == '__main__':
 #                            ]
 #                    )).to(device)
         print('validating ...')
-        valid_loss = validation_loop(decoder,loss_func,dataloader_valid,device,idx_epoch)
+        valid_loss          = validation_loop(decoder,loss_func,dataloader_valid,device,idx_epoch)
     
         print(f'epoch {idx_epoch + stp}, validation loss = {valid_loss:.6f}')
         print('determine early stop')
