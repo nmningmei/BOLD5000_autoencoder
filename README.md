@@ -57,11 +57,14 @@ converter.run()
 ## Step 1.2. [ICA AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991) and [denoising](https://github.com/maartenmennes/ICA-AROMA) - you have to download the GitHub repository to go with the data (nipype, fsl, and ICA AROMA github repo needed)
 ```
 from nipype.interfaces.fsl import ICA_AROMA
+
 # get the subject name
 sub_name = np.unique(re.findall(r'CSI\d',picked_data))[0]
+
 # get the session and run
 n_session = np.unique(re.findall(r'Sess-\d+',picked_data))[0]
 n_run = np.unique(re.findall(r'Run-\d+',picked_data))[0]
+
 # get the file of the first run of the first session. Why? Because ICA AROMA takes the structural files and structural scans are only processed when the first run of the first session is processed. 
 run1 = 'Run-1_'
 session1 = 'Sess-1_'
@@ -73,6 +76,7 @@ first_run = os.path.abspath([item for item in glob(os.path.join(data_dir,
             and (session1 in item)\
             and (run1 in item)][0])
 first_run_dir = '/'.join(first_run.split('/')[:-1])
+
 # define some of the kind inputs
 func_to_struct      = os.path.join(first_run_dir,
                                    'outputs',
@@ -99,6 +103,7 @@ preprocessed_fmri   = glob(os.path.join('/'.join(picked_data.split('/')[:-1]),
                                         'outputs',
                                         'func',
                                         'prefiltered_func.nii.gz'))[0]
+                                        
 # inputs to the corresponding argument placeholders
 AROMA_obj           = ICA_AROMA()
 AROMA_obj.inputs.in_file            = os.path.abspath(preprocessed_fmri)
@@ -108,8 +113,10 @@ AROMA_obj.inputs.motion_parameters  = os.path.abspath(fsl_mcflirt_movpar)
 AROMA_obj.inputs.mask               = os.path.abspath(mask)
 AROMA_obj.inputs.denoise_type       = 'nonaggr'
 AROMA_obj.inputs.out_dir            = os.path.abspath(output_dir)
+
 # with "-ow" you can overwrite the old results
 cmdline             = 'python ../ICA_AROMA/' + AROMA_obj.cmdline + ' -ow'
+
 # run the graph we set up above
 os.system(cmdline)
 ```
@@ -117,7 +124,7 @@ os.system(cmdline)
 ## Step 1.3. Register functional scans to structural scans (nipype, fsl, and freesurfer needed)
 ![reg](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/registrate%20funtional%20scans%20to%20sctural%20scans.png)
 
-## Step 1.4. High pass filter at 60 Hz (nipype and fsl are needed)
+## Step 1.4. High-pass filter at 60 Hz (nipype and fsl are needed)
 ![hpf](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/highpass_temp.png)
 
 ## Step 1.5. Reshape the volumes into 88 x 88 x 66 with larger voxel sizes
@@ -133,7 +140,9 @@ target_func = load_fmri(
                       'target_func.nii.gz')
                       )
                       )
+                      
 # afni 3dresample -dxyz 2.386364,2.386364,2.4 -prefix output.nii.gz -input input.nii.gz
+
 # resample the voxel sizes
 resample3d = afni.utils.Resample(voxel_size = (2.386364,2.386364,2.4))
 resample3d.inputs.in_file = picked_data
