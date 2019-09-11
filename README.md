@@ -2,7 +2,7 @@
 An autoencoder trained on the BOLD5000 dataset
 
 # Inspiration
-Even when participants view images of living and non-living objects that they are not able to discriminate behaviorally, we are able to classify the correct categories based on the functional magnetic resonance imaging blood-oxygen-level-dependent (fMRI BOLD) responses above chance level. In short, the BOLD response provides more information than behavior in classifying the categories. While significant, the area under the receiver operating characteristic curve (ROC AUC) is low, so we sought to utilize transfer learning \cite {yosinski2014transferable} to improve the performance. Yosinski et al.’s work was based on supervised machine learning, but a system trained with unsupervised machine learning is more generalizable \cite {bengio2012deep}. Thus we trained an autoencoder which is an unsupervised machine learning algorithm that consists of two parts: an encoder and a decoder. An encoder extracts “features” that compresses the input, and then the decoder reconstructs the input based on the extracted “features”.
+Even when participants view images of living and non-living objects that they are not able to discriminate behaviorally, we are able to classify the correct categories based on the functional magnetic resonance imaging blood-oxygen-level-dependent (fMRI BOLD) responses above chance level. In short, the BOLD response provides more information than behavior in classifying the categories. While significant, the area under the receiver operating characteristic curve (ROC AUC) is low, so we sought to utilize transfer learning ([Yosinski et al., 2014] (https://arxiv.org/pdf/1411.1792.pdf)) to improve the performance. Yosinski et al.’s work was based on supervised machine learning, but a system trained with unsupervised machine learning is more generalizable ([Bengio, 2012] (http://proceedings.mlr.press/v27/bengio12a/bengio12a.pdf)). Thus we trained an autoencoder which is an unsupervised machine learning algorithm that consists of two parts: an encoder and a decoder. An encoder extracts “features” that compresses the input, and then the decoder reconstructs the input based on the extracted “features”.
 
 # Requirements
 - Python 3.5+
@@ -12,7 +12,7 @@ Even when participants view images of living and non-living objects that they ar
 - Freesurfer 6.0.0 (optional for structural scan processing)
 - AFNI - stable version
 
-# Python Libraries
+# Python libraries
 - numpy 1.16.1
 - pandas 0.20.3
 - nipype 1.1.9
