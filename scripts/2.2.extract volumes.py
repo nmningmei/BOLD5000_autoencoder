@@ -5,13 +5,13 @@ Created on Fri Aug 23 11:33:47 2019
 
 @author: nmei
 
-extract volumes based on the time courses, without the knowledge of the image
+extract volumes based on the time courses, without knowledge of the image
 
 The following image presentation details apply for each run, each session, 
 and each participant. A slow event-related design was implemented for stimulus 
 presentation in order to isolate the blood oxygen level dependent (BOLD) signal 
 for each individual image trial. At the beginning and end of each run, centered 
-on a blank, black screen, a fixation cross was shown for 6 sec and 12 sec, respectively. 
+on a blank black screen, a fixation cross was shown for 6 sec and 12 sec, respectively. 
 Following the initial fixation cross, all 37 stimuli were shown sequentially. 
 Each image was presented for 1 sec followed by a 9 sec fixation cross. Given that 
 each run contains 37 stimuli, there was a total of 370 sec of stimulus presentation 
@@ -109,31 +109,4 @@ for idx in tqdm(range(len(reshaped))):
                                    f'{sub_name}_session{n_session}_run{n_run}_volume{ii+1}.nii.gz')
         back_to_3D.to_filename(saving_name)
         
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        
