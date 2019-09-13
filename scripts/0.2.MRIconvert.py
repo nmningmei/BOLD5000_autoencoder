@@ -7,7 +7,7 @@ Created on Thu Jul 11 11:33:29 2019
 
 dcm2niix will re-orient the image automatically and cannot be turned off
 so I will stick to dcm2nii for a while and see if anything changes
-** but after a throughout investigation, this would only affect structural scans
+** after a thorough investigation, I found that this only affects structural scans
 
 dcm2nii requires mricron-10.2014 while dcm2niix requires mricrogl
 """
@@ -27,7 +27,7 @@ working_dir = '../../../../BOLD5000/data/unzipped'# data in .dcm format
 working_data = [item for item in glob(os.path.join(working_dir,'*','*'))]
 print(np.sort(working_data),'\n')
 
-#structual = [item for item in glob(os.path.join(working_dir,'*')) if \
+#structural = [item for item in glob(os.path.join(working_dir,'*')) if \
 #             ('t1' in item)][-1]
 
 for working_file in working_data:
@@ -45,7 +45,7 @@ for working_file in working_data:
     converter.cmdline
     converter.run()
 
-#for working_file in [structual]:
+#for working_file in [structural]:
 #    converter = Dcm2nii()
 #    converter.inputs.source_dir = os.path.abspath(working_file)
 #    temp_output_dir = os.path.abspath(os.path.join(
