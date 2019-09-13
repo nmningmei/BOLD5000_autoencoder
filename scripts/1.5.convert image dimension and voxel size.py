@@ -35,6 +35,6 @@ for idx in range(len(filtered)):
                              target_shape   = (88,88,66))
     resampled.to_filename(picked_data.replace('filtered.nii.gz',
                                               'filtered_reshaped.nii.gz'))
-    # the existed resampled file will conflict the next run of this script
-    # and it is no use anymore
+    # the existing resampled file will cause a conflict on the next run of this script
+    # and we don't need it anymore
     os.remove(picked_data.replace('filtered.nii.gz','filtered_resample.nii.gz'))
