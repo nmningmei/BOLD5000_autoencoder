@@ -2,7 +2,7 @@
 An autoencoder trained on the BOLD5000 dataset
 
 # Inspiration
-Even when participants view images of living and non-living objects that they are not able to discriminate behaviorally, we are able to classify the correct categories based on the functional magnetic resonance imaging blood-oxygen-level-dependent (fMRI BOLD) responses above chance level. In short, the BOLD response provides more information than behavior in classifying the categories. While significant, the area under the receiver operating characteristic curve (ROC AUC) is low, so we sought to utilize transfer learning ([Yosinski et al., 2014] (https://arxiv.org/pdf/1411.1792.pdf)) to improve the performance. Yosinski et al.’s work was based on supervised machine learning, but a system trained with unsupervised machine learning is more generalizable ([Bengio, 2012] (http://proceedings.mlr.press/v27/bengio12a/bengio12a.pdf)). Thus we trained an autoencoder which is an unsupervised machine learning algorithm that consists of two parts: an encoder and a decoder. An encoder extracts “features” that compresses the input, and then the decoder reconstructs the input based on the extracted “features”.
+Even when participants view images of living and non-living objects that they are not able to discriminate behaviorally, we are able to classify the correct categories based on the functional magnetic resonance imaging blood-oxygen-level-dependent (fMRI BOLD) responses above chance level. In short, the BOLD response provides more information than behavior in classifying the categories. While significant, the area under the receiver operating characteristic curve (ROC AUC) is low, so we sought to utilize transfer learning (Yosinski et al., 2014 https://arxiv.org/pdf/1411.1792.pdf) to improve the performance. Yosinski et al.’s work was based on supervised machine learning, but a system trained with unsupervised machine learning is more generalizable (Bengio, 2012 http://proceedings.mlr.press/v27/bengio12a/bengio12a.pdf). Thus we trained an autoencoder which is an unsupervised machine learning algorithm that consists of two parts: an encoder and a decoder. An encoder extracts “features” that compresses the input, and then the decoder reconstructs the input based on the extracted “features”.
 
 # Requirements
 - Python 3.5+
@@ -162,6 +162,7 @@ resampled.to_filename(picked_data.replace('filtered.nii.gz',
 
 ## Step 1.6. Get relevant volumes
 ![fmri-protocol](https://github.com/nmningmei/BOLD5000_autoencoder/blob/master/figures/fMRI%20protocol.jpg)
+
 According to the figure shown above, we don't have to use all the MRI volumes but a small subset of them because not all of them are related to the images shown to the subjects. Here we pick those volumes 4 - 8 seconds after the onset of the image at each trial. 
 
 # Step 2. Autoencoder modeling
