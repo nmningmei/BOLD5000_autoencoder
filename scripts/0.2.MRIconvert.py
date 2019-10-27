@@ -5,11 +5,21 @@ Created on Thu Jul 11 11:33:29 2019
 
 @author: nmei
 
-dcm2niix will re-orient the image automatically and cannot be turned off
-so I will stick to dcm2nii for a while and see if anything changes
-** after a thorough investigation, I found that this only affects structural scans
+While dcm2niix is provided with recent versions of MRIcroGL and MRIcron, it can also be installed on its own and 
+does not require those tools. Methods to get the latest stable release include
+dcm2niix GitHub release page.
+- For Linux: curl -fLO https://github.com/rordenlab/dcm2niix/releases/latest/download/dcm2niix_lnx.zip
+- For MacOS: curl -fLO https://github.com/rordenlab/dcm2niix/releases/latest/download/dcm2niix_mac.zip
+- For Windows: curl -fLO https://github.com/rordenlab/dcm2niix/releases/latest/download/dcm2niix_win.zip
 
-dcm2nii requires mricron-10.2014 while dcm2niix requires mricrogl
+
+With the current versions of dcm2niix you can disable rotation of 3D acquisitions with the -x i parameter. 
+Note that only 3D acquisitions are rotated (as these scans do not require slice time correction that is sometimes 
+applied to 2D EPI sequences) and is lossless: the volume is rotated orthogonally to the orientation that best matches 
+the NIfTI identity matrix. The residual rotation is stored in the Form so spatial positions remain the same. Therefore, 
+this only influence data storage on disk. Further, as 2D EPI scans are typically axial slices while 3D sequences of 
+the head are usually sagittal, this rotation (which makes stores the 3D image as axial slices) makes the 2D and 3D 
+sequences more similar.
 """
 
 import os
