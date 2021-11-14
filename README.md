@@ -13,13 +13,17 @@ Even when participants view images of living and non-living objects that they ar
 - AFNI - stable version
 
 # Python libraries
-- numpy 1.16.1
-- pandas 0.20.3
-- nipype 1.1.9
-- nibabel 2.4.1
-- nilearn 0.5.0
-- scikit-learning 0.20.3
-- pytorch-cpu 1.2
+- mne:           0.22.0
+- numpy:         1.19.2 {blas=mkl_rt, lapack=mkl_rt}
+- scipy:         1.6.0
+- matplotlib:    3.3.2 {backend=module://ipykernel.pylab.backend_inline}
+
+- sklearn:       0.23.2
+- nibabel:       3.2.1
+- nilearn:       0.7.0
+- pandas:        1.2.0
+- pytorch:       1.7.1
+
 
 # Checklist:
 - [x] Download and preprocess the BOLD5000 dataset
